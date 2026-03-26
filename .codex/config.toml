@@ -1,0 +1,59 @@
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+sandbox_workspace_write.network_access = false
+web_search = "cached"
+
+project_root_markers = [".git"]
+project_doc_fallback_filenames = ["TEAM_GUIDE.md", ".agents.md"]
+project_doc_max_bytes = 65536
+
+[features]
+multi_agent = true
+
+[agents]
+max_threads = 6
+max_depth = 1
+
+[agents.explorer]
+description = "Read-only codebase explorer for gathering evidence before edits."
+config_file = "agents/explorer.toml"
+
+[agents.reviewer]
+description = "Correctness, security, regression, and missing-test review."
+config_file = "agents/reviewer.toml"
+
+[agents.docs_researcher]
+description = "Primary-doc verifier for APIs, framework behavior, and release notes."
+config_file = "agents/docs-researcher.toml"
+
+[agents.platform_engineer]
+description = "Kubernetes, Helm, Argo CD, Terraform, rollout, ingress, and autoscaling specialist."
+config_file = "agents/platform-engineer.toml"
+
+[agents.observability_reviewer]
+description = "Metrics, logs, traces, dashboards, alerts, and telemetry review specialist."
+config_file = "agents/observability-reviewer.toml"
+
+[agents.release_manager]
+description = "CI/CD, image tagging, GitOps promotion, release-note, and deployment workflow specialist."
+config_file = "agents/release-manager.toml"
+
+# Optional MCPs. Start lean.
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp@latest"]
+
+[mcp_servers.sequential-thinking]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+
+[profiles.strict]
+approval_policy = "on-request"
+sandbox_mode = "read-only"
+web_search = "cached"
+
+[profiles.yolo]
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+sandbox_workspace_write.network_access = true
+web_search = "live"
