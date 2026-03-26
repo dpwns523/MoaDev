@@ -14,19 +14,19 @@ If a section does not apply, write `None`.
 
 ### Summary
 
-Standardized the root contributor workflow with canonical `make` commands, concise repository instructions, project-local Codex agent role definitions, and a default Korean pull request template.
+Standardized the root contributor workflow with canonical `make` commands, concise repository instructions, project-local Codex agent role definitions, a default Korean pull request template, and working scaffolds for the web, API, agent runtime, and Terraform workspaces.
 
 ### User Impact
 
 - Who is affected: contributors and operators working from the repository root
-- What users will notice: a consistent `make` entrypoint, clearer repository expectations, documented target workspace layout, and a prefilled Korean PR body template
+- What users will notice: a consistent `make` entrypoint, clearer repository expectations, documented workspace layout, runnable workspace scaffolds, and a prefilled Korean PR body template
 - Expected benefits: lower onboarding friction and fewer ad hoc command conventions
 
 ### Migration Notes
 
 - Required upgrade steps: use `make` targets from the repository root instead of ad hoc local commands
 - Data or config changes: none
-- Operator actions: scaffold the planned workspaces before replacing skip-based command placeholders
+- Operator actions: run `make bootstrap` before local development and install `terraform` locally before running Terraform validation targets
 
 ### New Env Vars
 
@@ -46,8 +46,8 @@ Standardized the root contributor workflow with canonical `make` commands, conci
 
 ### Known Issues
 
-- Several documented workspaces are planned and not yet scaffolded.
-- Root `make` targets intentionally skip missing workspaces until those directories are added.
+- `platform/helm`, `platform/argocd`, and `platform/monitoring` are still not scaffolded.
+- Terraform validation still depends on the local `terraform` CLI being installed.
 
 ---
 

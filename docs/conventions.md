@@ -21,7 +21,7 @@ Canonical root commands are standardized through the repository `Makefile`.
 - Verify: `make verify`
 - Format: `make format`
 
-Until all planned workspaces exist, these commands may skip missing targets instead of failing immediately. Keep this section and `AGENTS.md` aligned with the actual `Makefile`.
+These commands are rooted in the workspace scaffolds under `apps/`, `services/`, and `infra/`. Terraform targets require a local `terraform` CLI to run. Keep this section and `AGENTS.md` aligned with the actual `Makefile`.
 
 ## Naming
 
