@@ -14,12 +14,12 @@ If a section does not apply, write `None`.
 
 ### Summary
 
-Standardized the root contributor workflow with canonical `make` commands, concise repository instructions, and project-local Codex agent role definitions.
+Standardized the root contributor workflow with canonical `make` commands, concise repository instructions, project-local Codex agent role definitions, and a default Korean pull request template.
 
 ### User Impact
 
 - Who is affected: contributors and operators working from the repository root
-- What users will notice: a consistent `make` entrypoint, clearer repository expectations, and documented target workspace layout
+- What users will notice: a consistent `make` entrypoint, clearer repository expectations, documented target workspace layout, and a prefilled Korean PR body template
 - Expected benefits: lower onboarding friction and fewer ad hoc command conventions
 
 ### Migration Notes

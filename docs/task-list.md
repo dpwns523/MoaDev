@@ -5,6 +5,7 @@
 - [x] Establish root `AGENTS.md`, `README.md`, `Makefile`, and Codex agent role configs.
 - [x] Standardize canonical root commands around `make`.
 - [x] Document the intended monorepo layout and repository expectations.
+- [x] Add a default GitHub pull request template with Korean body sections.
 
 ## Next
 
