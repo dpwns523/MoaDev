@@ -1,6 +1,6 @@
 ---
 name: search-first
-description: Research-before-coding workflow. Search for existing tools, libraries, and patterns before writing custom code. Invokes the researcher agent.
+description: Research-before-coding workflow. Search for existing tools, libraries, and patterns before writing custom code. Use Codex subagents for parallel read-heavy research when it helps.
 origin: ECC
 ---
 
@@ -24,7 +24,7 @@ Use this skill when:
 │     Define what functionality is needed      │
 │     Identify language/framework constraints  │
 ├─────────────────────────────────────────────┤
-│  2. PARALLEL SEARCH (researcher agent)      │
+│  2. PARALLEL SEARCH (read-heavy subagent)   │
 │     ┌──────────┐ ┌──────────┐ ┌──────────┐  │
 │     │  npm /   │ │  MCP /   │ │  GitHub / │  │
 │     │  PyPI    │ │  Skills  │ │  Web      │  │
@@ -63,24 +63,29 @@ Before writing a utility or adding functionality, mentally run through:
 
 0. Does this already exist in the repo? → `rg` through relevant modules/tests first
 1. Is this a common problem? → Search npm/PyPI
-2. Is there an MCP for this? → Check `~/.claude/settings.json` and search
-3. Is there a skill for this? → Check `~/.claude/skills/`
+2. Is there an MCP for this? → Check `.codex/config.toml` and your local Codex config
+3. Is there a skill for this? → Check `.agents/skills/` and `$CODEX_HOME/skills/`
 4. Is there a GitHub implementation/template? → Run GitHub code search for maintained OSS before writing net-new code
 
 ### Full Mode (agent)
 
-For non-trivial functionality, launch the researcher agent:
+For non-trivial functionality, delegate the research slice to a read-heavy Codex subagent when available:
 
-```
-Task(subagent_type="general-purpose", prompt="
+```text
+spawn_agent(
+  agent_type="explorer",
+  message="""
   Research existing tools for: [DESCRIPTION]
   Language/framework: [LANG]
   Constraints: [ANY]
 
-  Search: npm/PyPI, MCP servers, Claude Code skills, GitHub
+  Search: npm/PyPI, MCP servers, Codex skills, GitHub
   Return: Structured comparison with recommendation
-")
+  """
+)
 ```
+
+If subagents are unavailable, run the same comparison locally and summarize the reuse options before writing custom code.
 
 ## Search Shortcuts by Category
 
@@ -91,7 +96,7 @@ Task(subagent_type="general-purpose", prompt="
 - Pre-commit → `husky`, `lint-staged`, `pre-commit`
 
 ### AI/LLM Integration
-- Claude SDK → Context7 for latest docs
+- OpenAI or provider SDKs → official docs or Context7
 - Prompt management → Check MCP servers
 - Document processing → `unstructured`, `pdfplumber`, `mammoth`
 
@@ -106,20 +111,20 @@ Task(subagent_type="general-purpose", prompt="
 
 ## Integration Points
 
-### With planner agent
-The planner should invoke researcher before Phase 1 (Architecture Review):
-- Researcher identifies available tools
-- Planner incorporates them into the implementation plan
-- Avoids "reinventing the wheel" in the plan
+### With `/plan`
+Use research findings before locking the implementation plan:
+- Identify reusable tools first
+- Capture the reuse-vs-build decision in the plan
+- Avoid "reinventing the wheel" in the implementation path
 
-### With architect agent
-The architect should consult researcher for:
+### With architecture review
+Use this workflow when evaluating:
 - Technology stack decisions
 - Integration pattern discovery
 - Existing reference architectures
 
-### With iterative-retrieval skill
-Combine for progressive discovery:
+### With deeper comparison loops
+Use progressive discovery when needed:
 - Cycle 1: Broad search (npm, PyPI, MCP)
 - Cycle 2: Evaluate top candidates in detail
 - Cycle 3: Test compatibility with project constraints

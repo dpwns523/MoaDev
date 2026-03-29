@@ -6,6 +6,7 @@
 - [x] Standardize canonical root commands around `make`.
 - [x] Document the intended monorepo layout and repository expectations.
 - [x] Add a default GitHub pull request template with Korean body sections.
+- [x] Audit repository-local skills and replace Claude-specific agent guidance with Codex-oriented wording and paths.
 
 ## Next
 
