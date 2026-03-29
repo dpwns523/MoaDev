@@ -27,7 +27,6 @@
 - Keep `docs/conventions.md` aligned with actual commands and tooling.
 
 ## Repository structure
-Use this as the intended monorepo layout as the repository is fleshed out.
 - `apps/web` - Next.js UI
 - `services/api` - FastAPI API
 - `services/agents-runtime` - product-facing agent orchestration

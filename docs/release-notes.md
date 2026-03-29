@@ -6,6 +6,51 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `core-workspace-scaffolds`
+
+- Date: `2026-03-29`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Added runnable workspace scaffolds for the web app, FastAPI API, agent runtime, and Terraform layouts, and wired the root verification flow to those concrete workspaces.
+
+### User Impact
+
+- Who is affected: contributors and operators working in the scaffolded monorepo workspaces
+- What users will notice: `apps/web`, `services/api`, `services/agents-runtime`, and `infra/terraform` now exist with working baseline code and root `make` targets execute real workspace commands instead of only skip paths
+- Expected benefits: contributors can bootstrap, build, lint, typecheck, test, and validate the core workspaces from the repository root
+
+### Migration Notes
+
+- Required upgrade steps: run `make bootstrap` before local development in a fresh checkout
+- Data or config changes: none
+- Operator actions: install the local `terraform` CLI before running Terraform validation targets
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- None.
+
+### Rollback Notes
+
+- Rollback trigger: the new workspace scaffolds or root verification flow block local development
+- Rollback steps: revert the scaffolded workspace directories and restore the previous skip-only root command behavior
+- Data recovery notes: none
+
+### Known Issues
+
+- `platform/helm`, `platform/argocd`, and `platform/monitoring` are still not scaffolded.
+- End-to-end Playwright wiring has not been added yet.
+
+---
+
 ## Release: `repo-bootstrap-foundation`
 
 - Date: `2026-03-26`

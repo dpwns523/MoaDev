@@ -27,6 +27,29 @@ go.work.sum
 # env file
 .env
 
+# Node / Next.js
+node_modules/
+.next/
+npm-debug.log*
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Terraform
+.terraform/
+*.tfplan
+
+# Local test build output
+.test-dist/
+*.tsbuildinfo
+
 # Editor/IDE
 # .idea/
 # .vscode/

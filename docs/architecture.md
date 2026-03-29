@@ -2,7 +2,7 @@
 
 ## Repository Shape
 
-`MoaDev` is being standardized toward a polyglot monorepo with these primary workspaces:
+`MoaDev` uses a polyglot monorepo with these primary workspaces:
 
 - `apps/web` for the Next.js user interface
 - `services/api` for the FastAPI backend
@@ -12,7 +12,7 @@
 - `platform/argocd` for GitOps application definitions
 - `platform/monitoring` for dashboards, alerts, and observability overlays
 
-The current repository still contains bootstrap code under `src/`, `tests/`, `e2e/`, and `scripts/`. Migrate incrementally rather than with a broad rewrite.
+The repository still keeps early bootstrap placeholders under `src/`, `tests/`, `e2e/`, and `scripts/` while the workspace-based layout grows. Migrate incrementally rather than with a broad rewrite.
 
 ## High-Level Flow
 
