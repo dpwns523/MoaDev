@@ -10,6 +10,7 @@
 - [x] Scaffold `services/api`.
 - [x] Scaffold `services/agents-runtime`.
 - [x] Scaffold `infra/terraform`.
+- [x] Audit repository-local skills and replace Claude-specific agent guidance with Codex-oriented wording and paths.
 
 ## Next
 

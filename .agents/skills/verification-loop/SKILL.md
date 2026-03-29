@@ -1,12 +1,14 @@
 ---
 name: verification-loop
-description: "A comprehensive verification system for Claude Code sessions."
+description: "A comprehensive verification system for Codex sessions."
 origin: ECC
 ---
 
 # Verification Loop Skill
 
-A comprehensive verification system for Claude Code sessions.
+A comprehensive verification system for Codex sessions.
+
+Prefer canonical repository commands such as `make verify`, `make test`, or repo-defined scripts when they exist. Fall back to raw tool commands only when the repository has not standardized them yet.
 
 ## When to Use
 
