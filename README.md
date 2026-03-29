@@ -1,2 +1,51 @@
 # MoaDev
-Developer Lounge that 'makes' global technology news and open-source PR in one place with harness engineering
+
+Monorepo bootstrap for:
+- web frontend (`apps/web`)
+- API (`services/api`)
+- agent runtime (`services/agents-runtime`)
+- infrastructure (`infra/terraform`)
+- platform delivery (`platform/helm`, `platform/argocd`)
+- monitoring (`platform/monitoring`)
+
+Some of the target workspaces are planned and may not exist yet. Root `make` commands skip missing workspaces until they are added.
+
+## Quick start
+
+```bash
+make bootstrap
+make lint
+make typecheck
+make test
+make verify
+```
+
+## Repo layout
+
+- `apps/web` - Next.js UI
+- `services/api` - FastAPI API
+- `services/agents-runtime` - product-facing agent orchestration
+- `infra/terraform` - Terraform IaC
+- `platform/helm` - Helm chart
+- `platform/argocd` - GitOps manifests
+- `platform/monitoring` - monitoring stack values
+- `src` - temporary bootstrap runtime code before workspace extraction
+- `tests` - repository-level unit and integration tests
+- `e2e` - end-to-end flows
+- `scripts` - local automation
+
+## Codex usage
+
+- Root instructions: `AGENTS.md`
+- Folder-specific rules: `AGENTS.override.md`
+- Skills: `.agents/skills/`
+- Subagents: `.codex/agents/`
+
+## Commands
+
+- `make build`
+- `make test`
+- `make lint`
+- `make typecheck`
+- `make e2e`
+- `make verify`
