@@ -8,8 +8,6 @@ Monorepo bootstrap for:
 - platform delivery (`platform/helm`, `platform/argocd`)
 - monitoring (`platform/monitoring`)
 
-Some of the target workspaces are planned and may not exist yet. Root `make` commands skip missing workspaces until they are added.
-
 ## Quick start
 
 ```bash
@@ -29,7 +27,7 @@ make verify
 - `platform/helm` - Helm chart
 - `platform/argocd` - GitOps manifests
 - `platform/monitoring` - monitoring stack values
-- `src` - temporary bootstrap runtime code before workspace extraction
+- `src` - legacy bootstrap placeholder kept during workspace migration
 - `tests` - repository-level unit and integration tests
 - `e2e` - end-to-end flows
 - `scripts` - local automation

@@ -6,13 +6,14 @@
 - [x] Standardize canonical root commands around `make`.
 - [x] Document the intended monorepo layout and repository expectations.
 - [x] Add a default GitHub pull request template with Korean body sections.
+- [x] Scaffold `apps/web`.
+- [x] Scaffold `services/api`.
+- [x] Scaffold `services/agents-runtime`.
+- [x] Scaffold `infra/terraform`.
 - [x] Audit repository-local skills and replace Claude-specific agent guidance with Codex-oriented wording and paths.
 
 ## Next
 
-- [ ] Scaffold `apps/web`.
-- [ ] Scaffold `services/api`.
-- [ ] Scaffold `services/agents-runtime`.
-- [ ] Scaffold `infra/terraform`.
 - [ ] Scaffold `platform/helm`, `platform/argocd`, and `platform/monitoring`.
-- [ ] Replace skip-based root commands with concrete workspace implementations as each area lands.
+- [ ] Add `e2e` Playwright workspace wiring against the new web and API scaffolds.
+- [ ] Replace any remaining fallback paths in root commands once platform tooling is available locally.
