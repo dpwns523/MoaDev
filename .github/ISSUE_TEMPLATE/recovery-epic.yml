@@ -1,0 +1,94 @@
+name: "Recovery Epic"
+description: "P0/P1/P2 같은 마일스톤 단위 복구 작업을 추적합니다."
+title: "[Epic] "
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: 이 Epic의 우선순위를 선택해주세요.
+      options:
+        - P0
+        - P1
+        - P2
+    validations:
+      required: true
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: Epic을 한 줄로 설명해주세요.
+      placeholder: 예) Baseline recovery for API and web integration
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: 왜 이 작업이 필요한지 적어주세요.
+      placeholder: 현재 상태, 누락된 부분, 사용자/운영 영향
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: In Scope
+      description: 이번 Epic에 포함할 범위를 적어주세요.
+      placeholder: |
+        - API baseline recovery
+        - web/API integration
+        - root verification alignment
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of Scope
+      description: 이번 Epic에서 하지 않을 일을 명확히 적어주세요.
+      placeholder: |
+        - Production deployment
+        - Full observability rollout
+
+  - type: textarea
+    id: child_issues
+    attributes:
+      label: Child Issues
+      description: 하위 구현 이슈나 예상 이슈를 적어주세요.
+      placeholder: |
+        - [ ] API failure-path tests
+        - [ ] Web home API connection
+        - [ ] Release note update
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: 완료 조건을 체크리스트로 적어주세요.
+      placeholder: |
+        - [ ] Required work is implemented
+        - [ ] Verification commands are green
+        - [ ] Follow-up issues are identified
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: 완료 시 실행해야 할 검증 명령을 적어주세요.
+      placeholder: |
+        - make lint
+        - make typecheck
+        - make test
+        - make verify
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / Notes
+      description: 위험요소, 의존성, 메모를 적어주세요.
+      placeholder: 관련 브랜치 전략, 숨은 리스크, blocked 조건

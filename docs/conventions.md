@@ -23,6 +23,14 @@ Canonical root commands are standardized through the repository `Makefile`.
 
 These commands are rooted in the workspace scaffolds under `apps/`, `services/`, and `infra/`. Terraform targets require a local `terraform` CLI to run. Keep this section and `AGENTS.md` aligned with the actual `Makefile`.
 
+## Task Tracking
+
+- GitHub Issues are the canonical source of truth for planned and in-progress work.
+- Use `.github/ISSUE_TEMPLATE/recovery-epic.yml` for milestone-level work such as `P0`, `P1`, and `P2`.
+- Use `.github/ISSUE_TEMPLATE/recovery-task.yml` for focused implementation work.
+- Link each PR to its corresponding issue.
+- `docs/task-list.md` is retained only as a migration pointer and should not carry live execution state.
+
 ## Naming
 
 - Files and folders: `kebab-case` unless a framework requires another format.
@@ -45,7 +53,7 @@ These commands are rooted in the workspace scaffolds under `apps/`, `services/`,
 - `tests/`: repository-level unit and integration tests
 - `e2e/`: end-to-end and workflow-level tests
 - `scripts/`: developer and CI utilities
-- `docs/`: product, architecture, conventions, task tracking, and release notes
+- `docs/`: product, architecture, conventions, migration notes, and release notes
 - `.agents/`: reusable skill and agent instructions
 - `.codex/`: local Codex configuration and agent profiles
 
@@ -96,4 +104,4 @@ Example error shape:
 - Error handling is intentional and user-visible behavior is clear.
 - API responses and status codes are consistent.
 - Tests cover the change, or missing coverage is documented.
-- Behavior changes include updates to `docs/task-list.md` and `docs/release-notes.md`.
+- Behavior changes include updates to the linked GitHub Issue and `docs/release-notes.md`.
