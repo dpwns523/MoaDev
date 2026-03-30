@@ -187,6 +187,53 @@ Hardened the `/api/v1/feeds` response boundary so malformed feed items consisten
 
 ---
 
+## Release: `container-packaging-scaffolds`
+
+- Date: `2026-03-30`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Added production-oriented container packaging for the Next.js web app, FastAPI API, and agent runtime, including standalone web output for self-hosted deployment.
+
+### User Impact
+
+- Who is affected: contributors and operators packaging or self-hosting the application surfaces
+- What users will notice: `apps/web`, `services/api`, and `services/agents-runtime` now each include a production-focused Dockerfile plus workspace-local `.dockerignore` guidance
+- Expected benefits: smaller runtime images, clearer deployment handoff, and a direct path to building service images without baking secrets into source control
+
+### Migration Notes
+
+- Required upgrade steps: provide runtime secrets and environment-specific configuration at deploy time instead of baking them into images
+- Data or config changes: none
+- Operator actions: build from the repository root with `docker build -f apps/web/Dockerfile .`, `docker build -f services/api/Dockerfile .`, and `docker build -f services/agents-runtime/Dockerfile .`
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- None.
+
+### Rollback Notes
+
+- Rollback trigger: image builds or self-hosted startup behavior regress for the web or service workspaces
+- Rollback steps: remove the added Docker packaging files and restore the previous non-containerized packaging state
+- Data recovery notes: none
+
+### Known Issues
+
+- Audit snapshot: packaging had no Dockerfiles or container build automation before this change; `.github` currently contains issue and PR templates only, with no workflow files for image build or publish automation.
+- Audit snapshot: `infra/terraform` exists and is wired into root verification, but `platform/helm`, `platform/argocd`, and `platform/monitoring` are still referenced by docs without corresponding directories in the repository.
+- Audit snapshot: the service-local `.dockerignore` files document intended workspace exclusions, but the current root-context validation commands still send the repository root as Docker build context.
+- Follow-up likely needed: `services/agents-runtime` is now packageable as an image, but it still lacks a dedicated long-running worker or service entrypoint.
+
+---
+
 ## Release: `core-workspace-scaffolds`
 
 - Date: `2026-03-29`
