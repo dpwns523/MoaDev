@@ -1,4 +1,8 @@
+from types import SimpleNamespace
+
 from fastapi.testclient import TestClient
+
+import app.main as main_module
 
 from app.main import app
 
@@ -21,3 +25,30 @@ def test_feeds_returns_curated_collection() -> None:
     assert response.status_code == 200
     assert payload["meta"]["total"] == 2
     assert [item["id"] for item in payload["data"]] == ["tech-news", "oss-prs"]
+
+
+def test_feeds_returns_error_envelope_for_invalid_feed_boundary(monkeypatch) -> None:
+    fail_safe_client = TestClient(app, raise_server_exceptions=False)
+
+    monkeypatch.setattr(
+        main_module,
+        "list_curated_feeds",
+        lambda: [
+            SimpleNamespace(
+                id="tech-news",
+                kind="news",
+                title="Technology news highlights",
+                source=None,
+            )
+        ],
+    )
+
+    response = fail_safe_client.get("/api/v1/feeds")
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "error": {
+            "code": "feed_validation_error",
+            "message": "Failed to build curated feed response.",
+        }
+    }
