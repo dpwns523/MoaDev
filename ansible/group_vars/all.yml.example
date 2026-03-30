@@ -1,0 +1,59 @@
+---
+# Sample only. Copy to all.yml and replace with deployment-specific values outside version control.
+
+service_name: moadev
+platform_provider: oci
+
+domains:
+  base: moadev.example.invalid
+  web: app.moadev.example.invalid
+  api: api.moadev.example.invalid
+  argocd: argocd.moadev.example.invalid
+  grafana: grafana.moadev.example.invalid
+
+images:
+  registry: registry.example.invalid/moadev
+  web_repository: web
+  api_repository: api
+  agents_runtime_repository: agents-runtime
+  tag: stable
+
+namespaces:
+  app: moadev
+  platform: moadev-platform
+  monitoring: moadev-monitoring
+  cicd: moadev-cicd
+
+ingress:
+  class_name: nginx
+  controller_replicas: 2
+
+scheduling:
+  default_node_pool: general
+  profile: balanced
+  topology_spread_policy: soft
+
+cicd:
+  gitops_repository: github.com/dpwns523/MoaDev
+  gitops_revision: main
+  sync_wave: 10
+  artifact_retention_days: 14
+
+monitoring:
+  prometheus_retention: 15d
+  loki_retention: 7d
+  grafana_admin_group: platform-admins
+  alert_route_email: platform-alerts@example.invalid
+
+storage:
+  storage_class: standard
+  artifact_bucket: moadev-artifacts-example
+  backup_bucket: moadev-backups-example
+  snapshot_schedule: "0 2 * * *"
+
+cost_automation:
+  cost_center: engineering-platform
+  monthly_budget_usd: 500
+  idle_scale_down_enabled: true
+  idle_scale_down_schedule: "0 22 * * 1-5"
+  report_schedule: "0 9 * * 1"
