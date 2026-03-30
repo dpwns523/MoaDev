@@ -1,0 +1,7 @@
+interface:
+  display_name: "Issue Planning"
+  short_description: "Track work in GitHub Issues instead of docs task lists"
+  brand_color: "#2563EB"
+  default_prompt: "Create or refine an issue-driven execution plan with epics, tasks, acceptance criteria, and verification"
+policy:
+  allow_implicit_invocation: true

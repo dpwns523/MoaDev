@@ -1,0 +1,105 @@
+name: "Recovery Task"
+description: "바로 구현 가능한 단위 작업을 생성합니다."
+title: "[Task] "
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: 이 작업의 우선순위를 선택해주세요.
+      options:
+        - P0
+        - P1
+        - P2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: track
+    attributes:
+      label: Track
+      description: 작업 성격을 선택해주세요.
+      options:
+        - backend
+        - frontend
+        - agents-runtime
+        - infra
+        - docs
+        - tooling
+    validations:
+      required: true
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: 작업을 한 줄로 설명해주세요.
+      placeholder: 예) Add failure-path tests for feed catalog boundary
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: 배경과 현재 문제를 적어주세요.
+      placeholder: 현재 구현 상태, 왜 지금 필요한지, 사용자 영향
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: 이번 작업에서 바꿀 내용을 적어주세요.
+      placeholder: |
+        - add failing tests first
+        - implement minimum production change
+        - keep diff focused
+    validations:
+      required: true
+
+  - type: textarea
+    id: planned_files
+    attributes:
+      label: Planned Files
+      description: 예상 수정/추가 파일을 적어주세요.
+      placeholder: |
+        - services/api/tests/test_main.py
+        - services/api/tests/test_feed_catalog.py
+        - services/api/app/services/feed_catalog.py
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: 완료 조건을 체크리스트로 적어주세요.
+      placeholder: |
+        - [ ] Failing tests added first
+        - [ ] Implementation is minimal and clear
+        - [ ] Verification commands pass
+    validations:
+      required: true
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: 완료 시 실행할 명령을 적어주세요.
+      placeholder: |
+        - make test
+        - make verify
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / Links
+      description: 선행 이슈, 관련 Epic, PR 링크를 적어주세요.
+      placeholder: |
+        - Parent Epic: #
+        - Depends on: #
+        - Follow-up: #

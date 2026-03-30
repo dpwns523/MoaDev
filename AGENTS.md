@@ -11,6 +11,8 @@
 
 ## Repository expectations
 - Use `/plan` for any task that is not trivially small.
+- For non-trivial implementation work, use GitHub Issues as the source of truth and start from `.github/ISSUE_TEMPLATE/`.
+- For issue breakdown, scope control, and acceptance criteria, use `$issue-driven-planning`.
 - Before building custom logic, use `$search-first` and summarize reuse options.
 - For domain logic and backend work, use `$tdd-workflow` and start with failing tests whenever practical.
 - For API contract changes, use `$api-design`.
@@ -21,7 +23,7 @@
 - Never commit secrets, credentials, `.tfstate`, or generated plan files.
 
 ## Documentation
-- Update `docs/task-list.md` whenever task status changes.
+- Track active work in GitHub Issues instead of `docs/task-list.md`.
 - Update `docs/architecture.md` when boundaries, data flow, deployment shape, or observability changes.
 - Update `docs/release-notes.md` when user-visible or operator-visible behavior changes.
 - Keep `docs/conventions.md` aligned with actual commands and tooling.

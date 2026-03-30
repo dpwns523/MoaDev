@@ -1,19 +1,14 @@
-# Task List
+# Task Tracking Migration
 
-## Active
+GitHub Issues are now the source of truth for planned, active, and follow-up work.
 
-- [x] Establish root `AGENTS.md`, `README.md`, `Makefile`, and Codex agent role configs.
-- [x] Standardize canonical root commands around `make`.
-- [x] Document the intended monorepo layout and repository expectations.
-- [x] Add a default GitHub pull request template with Korean body sections.
-- [x] Scaffold `apps/web`.
-- [x] Scaffold `services/api`.
-- [x] Scaffold `services/agents-runtime`.
-- [x] Scaffold `infra/terraform`.
-- [x] Audit repository-local skills and replace Claude-specific agent guidance with Codex-oriented wording and paths.
+## Use These Templates
 
-## Next
+- `.github/ISSUE_TEMPLATE/recovery-epic.yml`
+- `.github/ISSUE_TEMPLATE/recovery-task.yml`
 
-- [ ] Scaffold `platform/helm`, `platform/argocd`, and `platform/monitoring`.
-- [ ] Add `e2e` Playwright workspace wiring against the new web and API scaffolds.
-- [ ] Replace any remaining fallback paths in root commands once platform tooling is available locally.
+## Guidance
+
+- Use Epic issues for milestone-sized work such as `P0`, `P1`, and `P2`.
+- Use Task issues for focused implementation units that should map cleanly to one branch and one PR.
+- Keep live execution status in GitHub Issues, not in this file.
