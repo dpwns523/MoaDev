@@ -6,6 +6,94 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `api-route-based-architecture`
+
+- Date: `2026-04-01`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Restructured `services/api` to a FastAPI route-based architecture with an app factory, a top-level router registry, versioned `api/v1/endpoints` modules, and dedicated API boundary schemas.
+
+### User Impact
+
+- Who is affected: contributors extending the FastAPI service and operators reviewing API structure
+- What users will notice: no endpoint path changes, but the API code is now organized around `APIRouter` modules and `api/v1/endpoints` instead of defining all routes in `app/main.py`
+- Expected benefits: clearer separation between app assembly, HTTP routes, schemas, and domain services
+
+### Migration Notes
+
+- Required upgrade steps: none
+- Data or config changes: none
+- Operator actions: none
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- None.
+
+### Rollback Notes
+
+- Rollback trigger: contributors need to temporarily return to a single-file FastAPI entrypoint
+- Rollback steps: move route registrations and boundary schemas back into `app/main.py` and remove the router package
+- Data recovery notes: none
+
+### Known Issues
+
+- The API currently has only a small route surface, so some route modules are intentionally lightweight until more endpoints are added.
+
+---
+
+## Release: `api-feed-validation-hardening`
+
+- Date: `2026-04-01`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Hardened the `/api/v1/feeds` response boundary so malformed feed items consistently return the structured `feed_validation_error` envelope, including mapping-based inputs and whitespace-only string fields.
+
+### User Impact
+
+- Who is affected: API consumers and operators relying on curated feed responses
+- What users will notice: `/api/v1/feeds` now rejects whitespace-only `id`, `title`, and `source` values at the API boundary and preserves the documented JSON error envelope for malformed mapping/object feed items
+- Expected benefits: a stricter and more predictable validation contract for curated feed payloads
+
+### Migration Notes
+
+- Required upgrade steps: none
+- Data or config changes: none
+- Operator actions: none
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- None.
+
+### Rollback Notes
+
+- Rollback trigger: feed producers must temporarily allow whitespace-only values or rely on generic FastAPI 500 responses for malformed feed items
+- Rollback steps: revert the API boundary validator and restore the previous feed serialization path
+- Data recovery notes: none
+
+### Known Issues
+
+- Feed producers still need to provide one of the curated `kind` values: `news` or `pull-request`.
+
+---
+
 ## Release: `core-workspace-scaffolds`
 
 - Date: `2026-03-29`
