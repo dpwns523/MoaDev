@@ -8,18 +8,18 @@ export function getHomeContent(): HomeSection[] {
   return [
     {
       id: "news",
-      title: "Global technology news",
-      description: "Curated stories that matter to developers without the surrounding noise.",
+      title: "Signal desk",
+      description: "Major product, platform, and tooling changes filtered into a quieter editorial brief.",
     },
     {
       id: "prs",
-      title: "Open-source pull request activity",
-      description: "Promising repositories and pull requests worth tracking or contributing to.",
+      title: "Review queue",
+      description: "Open-source pull requests with enough context to decide whether to watch, review, or jump in.",
     },
     {
       id: "actions",
-      title: "Action-ready follow-up",
-      description: "Structured next steps that turn insight into review, tracking, and execution.",
+      title: "Follow-up map",
+      description: "Structured next steps that turn reading into triage, comments, and execution.",
     },
   ];
 }

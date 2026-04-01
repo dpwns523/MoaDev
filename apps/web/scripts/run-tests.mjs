@@ -1,4 +1,4 @@
-import { rmSync } from "node:fs";
+import { readdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -10,7 +10,7 @@ const tscExecutable = join(
   ".bin",
   process.platform === "win32" ? "tsc.cmd" : "tsc",
 );
-const compiledTestFile = join(projectRoot, ".test-dist", "get-home-content.test.js");
+const compiledOutputDirectory = join(projectRoot, ".test-dist");
 
 function run(command, args) {
   return spawnSync(command, args, {
@@ -26,7 +26,11 @@ if (compileResult.status !== 0) {
   process.exit(compileResult.status ?? 1);
 }
 
-const testResult = run(process.execPath, ["--test", compiledTestFile]);
+const compiledTestFiles = readdirSync(compiledOutputDirectory)
+  .filter((fileName) => fileName.endsWith(".test.js"))
+  .map((fileName) => join(compiledOutputDirectory, fileName));
 
-rmSync(join(projectRoot, ".test-dist"), { force: true, recursive: true });
+const testResult = run(process.execPath, ["--test", ...compiledTestFiles]);
+
+rmSync(compiledOutputDirectory, { force: true, recursive: true });
 process.exit(testResult.status ?? 1);
