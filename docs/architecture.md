@@ -31,3 +31,17 @@ The intended product path is:
 - Validate data at system boundaries.
 - Prefer additive workspace scaffolding over restructuring existing code without a migration plan.
 - Use root `make` commands as the canonical automation entrypoint for contributors and agents.
+
+## API Service Layout
+
+`services/api` uses a route-based FastAPI layout:
+
+- `app/main.py` assembles the application and exposes the app factory.
+- `app/api/router.py` is the top-level router registry.
+- `app/api/endpoints/` contains unversioned operational endpoints such as health checks.
+- `app/api/v1/router.py` composes versioned API routers.
+- `app/api/v1/endpoints/` contains versioned HTTP route modules grouped by resource.
+- `app/schemas/` contains request and response boundary models.
+- `app/services/` contains domain and service logic used by the route handlers.
+
+This keeps route registration explicit, makes endpoint modules easier to grow independently, and preserves thin HTTP handlers that delegate business logic to service modules.

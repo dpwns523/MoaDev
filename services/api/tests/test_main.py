@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-import app.main as main_module
+import app.api.v1.endpoints.feeds as feeds_route_module
 
 from app.main import app
 
@@ -31,7 +31,7 @@ def test_feeds_returns_error_envelope_for_invalid_feed_boundary(monkeypatch) -> 
     fail_safe_client = TestClient(app, raise_server_exceptions=False)
 
     monkeypatch.setattr(
-        main_module,
+        feeds_route_module,
         "list_curated_feeds",
         lambda: [
             SimpleNamespace(
@@ -39,6 +39,60 @@ def test_feeds_returns_error_envelope_for_invalid_feed_boundary(monkeypatch) -> 
                 kind="news",
                 title="Technology news highlights",
                 source=None,
+            )
+        ],
+    )
+
+    response = fail_safe_client.get("/api/v1/feeds")
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "error": {
+            "code": "feed_validation_error",
+            "message": "Failed to build curated feed response.",
+        }
+    }
+
+
+def test_feeds_returns_error_envelope_for_invalid_mapping_feed_boundary(monkeypatch) -> None:
+    fail_safe_client = TestClient(app, raise_server_exceptions=False)
+
+    monkeypatch.setattr(
+        feeds_route_module,
+        "list_curated_feeds",
+        lambda: [
+            {
+                "id": "tech-news",
+                "kind": "news",
+                "title": "Technology news highlights",
+                "source": None,
+            }
+        ],
+    )
+
+    response = fail_safe_client.get("/api/v1/feeds")
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "error": {
+            "code": "feed_validation_error",
+            "message": "Failed to build curated feed response.",
+        }
+    }
+
+
+def test_feeds_rejects_whitespace_only_feed_fields(monkeypatch) -> None:
+    fail_safe_client = TestClient(app, raise_server_exceptions=False)
+
+    monkeypatch.setattr(
+        feeds_route_module,
+        "list_curated_feeds",
+        lambda: [
+            SimpleNamespace(
+                id="tech-news",
+                kind="news",
+                title="   ",
+                source="global-tech-signal",
             )
         ],
     )
