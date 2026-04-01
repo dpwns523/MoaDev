@@ -1,9 +1,11 @@
+import "./globals.css";
+
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "MoaDev",
-  description: "Developer lounge for technology news and open-source pull requests.",
+  title: "MoaDev Journal",
+  description: "Editorial developer briefing for technology signals, pull requests, and follow-up actions.",
 };
 
 type RootLayoutProps = {

@@ -6,6 +6,51 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `web-home-live-feed`
+
+- Date: `2026-04-01`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Rebuilt the web home page into an editorial, Stripe Blog-inspired briefing surface and connected it to the FastAPI curated feed with a resilient preview fallback.
+
+### User Impact
+
+- Who is affected: contributors and operators running the web app against the API service
+- What users will notice: the home page now shows a designed editorial feed instead of a plain scaffold list, and it can render live `/api/v1/feeds` content when the API is reachable
+- Expected benefits: clearer product direction, a more intentional first impression, and a usable integration point between `apps/web` and `services/api`
+
+### Migration Notes
+
+- Required upgrade steps: set `MOADEV_API_BASE_URL` when the web app needs to reach a non-local API host
+- Data or config changes: the web app now reads the FastAPI feed contract at `/api/v1/feeds`
+- Operator actions: verify the API base URL is reachable from the Next.js runtime environment
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `MOADEV_API_BASE_URL` | no | `http://127.0.0.1:8000` | Base URL used by the Next.js home page when fetching the FastAPI curated feed. |
+
+### Breaking Changes
+
+- None.
+
+### Rollback Notes
+
+- Rollback trigger: the new home feed fetch or editorial layout blocks local preview or deployment expectations
+- Rollback steps: revert the new `apps/web` home page and helper files, then restore the previous static scaffold content
+- Data recovery notes: none
+
+### Known Issues
+
+- The live API currently returns a very small curated set, so the page relies on layout polish and a preview fallback more than content volume.
+- If `MOADEV_API_BASE_URL` is misconfigured, the page intentionally falls back to preview stories instead of surfacing a hard failure.
+
+---
+
 ## Release: `api-route-based-architecture`
 
 - Date: `2026-04-01`
