@@ -1,26 +1,24 @@
 ---
-# Sample only. Provider-specific overrides for AWS targets.
+# Sample only. Provider-specific overrides for AWS control plane and worker nodes.
 
 aws_cluster:
   region: us-west-2
   account_id: "123456789012"
   vpc_id: vpc-0123456789example
-  private_subnet_ids:
+  control_plane_subnet_ids:
     - subnet-aaaexample
     - subnet-bbbexample
-  public_subnet_ids:
+  worker_subnet_ids:
+    - subnet-eeeexample
+    - subnet-fffexample
+  public_load_balancer_subnet_ids:
     - subnet-cccexample
     - subnet-dddexample
-  cluster_name: moadev-eks
-  kubernetes_version: "1.30"
-  node_group_name: moadev-general
-  instance_type: m6i.large
-  desired_size: 3
-  spot_enabled: false
-  autoscaler_expander: least-waste
+  control_plane_instance_type: m6i.large
+  worker_instance_type: m6i.large
+  worker_spot_enabled: false
 
 ingress:
-  class_name: alb
   load_balancer_scheme: internet-facing
 
 storage:

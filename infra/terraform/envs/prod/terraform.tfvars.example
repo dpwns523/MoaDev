@@ -1,7 +1,42 @@
 # Sample only. Copy to terraform.tfvars and replace with environment-specific values outside version control.
 
 service_name      = "moadev"
-platform_provider = "aws"
+platform_topology = "multicloud"
+
+cluster_topology = {
+  cluster_name           = "moadev-prod-multicloud"
+  kubernetes_version     = "1.34.2"
+  control_plane_provider = "aws"
+  cni_plugin             = "calico"
+  pod_cidr               = "10.0.0.0/16"
+  service_cidr           = "10.96.0.0/12"
+  node_groups = {
+    aws_control_plane = {
+      provider         = "aws"
+      role             = "control-plane"
+      desired_count    = 1
+      min_count        = 1
+      max_count        = 5
+      scaling_strategy = "manual"
+    }
+    aws_workers = {
+      provider         = "aws"
+      role             = "worker"
+      desired_count    = 3
+      min_count        = 3
+      max_count        = 8
+      scaling_strategy = "manual"
+    }
+    oci_workers = {
+      provider         = "oci"
+      role             = "worker"
+      desired_count    = 3
+      min_count        = 3
+      max_count        = 8
+      scaling_strategy = "manual"
+    }
+  }
+}
 
 domains = {
   base    = "moadev.example.invalid"
@@ -27,15 +62,16 @@ namespaces = {
 }
 
 ingress = {
-  class_name           = "alb"
-  controller_replicas  = 3
-  external_dns_zone    = "moadev.example.invalid"
-  load_balancer_scheme = "public"
+  class_name             = "nginx"
+  controller_replicas    = 3
+  external_dns_zone      = "moadev.example.invalid"
+  load_balancer_provider = "aws"
+  load_balancer_scheme   = "internet-facing"
 }
 
 scheduling = {
-  default_node_pool      = "general"
-  profile                = "high-availability"
+  default_node_group     = "aws_workers"
+  profile                = "multi-cloud-high-availability"
   topology_spread_policy = "hard"
 }
 
@@ -54,9 +90,8 @@ monitoring = {
 }
 
 storage = {
-  storage_class    = "gp3"
-  artifact_bucket  = "moadev-prod-artifacts-example"
-  backup_bucket    = "moadev-prod-backups-example"
+  artifact_bucket   = "moadev-prod-artifacts-example"
+  backup_bucket     = "moadev-prod-backups-example"
   snapshot_schedule = "0 1 * * *"
 }
 
@@ -69,30 +104,41 @@ cost_automation = {
 }
 
 # Keep both provider blocks visible so future Terraform variable plumbing can stay additive.
+# Node counts live in cluster_topology.node_groups to avoid provider-specific duplication.
 oci_cluster = {
-  region               = "ap-osaka-1"
-  tenancy_ocid         = "ocid1.tenancy.oc1..exampleuniqueid"
-  compartment_ocid     = "ocid1.compartment.oc1..exampleuniqueid"
-  vcn_ocid             = "ocid1.vcn.oc1.ap-osaka-1.exampleuniqueid"
-  worker_subnet_ocids  = ["ocid1.subnet.oc1.ap-osaka-1.exampleworker1", "ocid1.subnet.oc1.ap-osaka-1.exampleworker2"]
-  ingress_subnet_ocids = ["ocid1.subnet.oc1.ap-osaka-1.examplelb1", "ocid1.subnet.oc1.ap-osaka-1.examplelb2"]
-  cluster_name         = "moadev-prod-oke"
-  kubernetes_version   = "v1.30.1"
-  node_pool_name       = "moadev-prod-general"
-  node_pool_shape      = "VM.Standard.E4.Flex"
-  node_pool_size       = 5
+  region             = "ap-osaka-1"
+  tenancy_ocid       = "ocid1.tenancy.oc1..exampleuniqueid"
+  compartment_ocid   = "ocid1.compartment.oc1..exampleuniqueid"
+  vcn_ocid           = "ocid1.vcn.oc1.ap-osaka-1.exampleuniqueid"
+  worker_subnet_ocids = [
+    "ocid1.subnet.oc1.ap-osaka-1.exampleworker1",
+    "ocid1.subnet.oc1.ap-osaka-1.exampleworker2",
+  ]
+  worker_shape       = "VM.Standard.E4.Flex"
+  worker_ocpus       = 4
+  worker_memory_gbs  = 32
+  workload_placement = "availability-domain-spread"
+  storage_class      = "oci-bv"
 }
 
 aws_cluster = {
-  region             = "us-west-2"
-  account_id         = "123456789012"
-  vpc_id             = "vpc-abcdef012345example"
-  private_subnet_ids = ["subnet-eeeexample", "subnet-fffexample"]
-  public_subnet_ids  = ["subnet-gggexample", "subnet-hhhexample"]
-  cluster_name       = "moadev-prod-eks"
-  kubernetes_version = "1.30"
-  node_group_name    = "moadev-prod-general"
-  instance_type      = "m6i.xlarge"
-  desired_size       = 5
-  spot_enabled       = false
+  region = "us-west-2"
+  account_id = "123456789012"
+  vpc_id = "vpc-abcdef012345example"
+  control_plane_subnet_ids = [
+    "subnet-aaaexample",
+    "subnet-bbbexample",
+  ]
+  worker_subnet_ids = [
+    "subnet-eeeexample",
+    "subnet-fffexample",
+  ]
+  public_load_balancer_subnet_ids = [
+    "subnet-gggexample",
+    "subnet-hhhexample",
+  ]
+  control_plane_instance_type = "m6i.xlarge"
+  worker_instance_type        = "m6i.xlarge"
+  worker_spot_enabled         = false
+  storage_class               = "gp3"
 }

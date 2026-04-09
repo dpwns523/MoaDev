@@ -6,6 +6,54 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `multicloud-config-samples`
+
+- Date: `2026-04-09`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Updated the sample platform configuration model so Terraform, Ansible, and operator env samples describe a self-managed multi-cloud Kubernetes cluster with AWS control-plane capacity and worker pools split across AWS and OCI.
+
+### User Impact
+
+- Who is affected: contributors and operators preparing infrastructure config samples
+- What users will notice: the sample files now describe `1` AWS control-plane node, `3` AWS worker nodes, and `3` OCI worker nodes, with future AWS control-plane scale-out represented explicitly
+- Expected benefits: fewer conflicting provider-specific defaults and a clearer path for future Terraform and Ansible wiring
+
+### Migration Notes
+
+- Required upgrade steps: refresh any local sample copies made from the old `EKS` or `OKE`-style examples
+- Data or config changes: rename single-provider fields such as `platform_provider` and managed-cluster node pool fields to the new multi-cloud topology model
+- Operator actions: keep node counts in shared topology fields and keep provider-specific compute, subnet, and storage overrides in the cloud-specific sample files
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `MOADEV_PLATFORM_TOPOLOGY` | yes | none | Declares whether the platform is single-provider or `multicloud`. |
+| `MOADEV_CONTROL_PLANE_PROVIDER` | yes | none | Identifies which cloud hosts the Kubernetes control plane. |
+| `MOADEV_AWS_CONTROL_PLANE_DESIRED_COUNT` | no | `1` | Sample desired AWS control-plane node count for the initial topology. |
+| `MOADEV_OCI_WORKER_DESIRED_COUNT` | no | `3` | Sample desired OCI worker node count for the initial topology. |
+
+### Breaking Changes
+
+- Sample config field names changed from managed-cluster terminology such as `platform_provider`, `node_group_name`, and `node_pool_size` to a topology-oriented model.
+
+### Rollback Notes
+
+- Rollback trigger: downstream scaffolds still depend on the old single-provider sample field names
+- Rollback steps: restore the previous sample field names and managed-cluster placeholders, then defer topology normalization to a follow-up PR
+- Data recovery notes: none
+
+### Known Issues
+
+- The sample topology is not wired into live Terraform modules or Ansible inventories yet.
+- Ansible CLI validation is not available in the current local environment.
+
+---
+
 ## Release: `web-home-live-feed`
 
 - Date: `2026-04-01`

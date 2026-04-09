@@ -1,5 +1,5 @@
 ---
-# Sample only. Provider-specific overrides for OCI targets.
+# Sample only. Provider-specific overrides for OCI worker nodes.
 
 oci_cluster:
   region: ap-seoul-1
@@ -9,20 +9,10 @@ oci_cluster:
   worker_subnet_ocids:
     - ocid1.subnet.oc1.ap-seoul-1.exampleworker1
     - ocid1.subnet.oc1.ap-seoul-1.exampleworker2
-  ingress_subnet_ocids:
-    - ocid1.subnet.oc1.ap-seoul-1.examplelb1
-    - ocid1.subnet.oc1.ap-seoul-1.examplelb2
-  cluster_name: moadev-oke
-  kubernetes_version: v1.30.1
-  node_pool_name: moadev-general
-  node_pool_shape: VM.Standard.E4.Flex
-  node_pool_size: 3
+  worker_shape: VM.Standard.E4.Flex
+  worker_ocpus: 2
+  worker_memory_gbs: 16
   workload_placement: availability-domain-spread
-
-ingress:
-  load_balancer_shape: flexible
-  load_balancer_min_mbps: 10
-  load_balancer_max_mbps: 100
 
 storage:
   storage_class: oci-bv
