@@ -1,0 +1,25 @@
+---
+# Sample only. Provider-specific overrides for AWS control plane and worker nodes.
+
+aws_cluster:
+  region: us-west-2
+  account_id: "123456789012"
+  vpc_id: vpc-0123456789example
+  control_plane_subnet_ids:
+    - subnet-aaaexample
+    - subnet-bbbexample
+  worker_subnet_ids:
+    - subnet-eeeexample
+    - subnet-fffexample
+  public_load_balancer_subnet_ids:
+    - subnet-cccexample
+    - subnet-dddexample
+  control_plane_instance_type: m6i.large
+  worker_instance_type: m6i.large
+  worker_spot_enabled: false
+
+ingress:
+  load_balancer_scheme: internet-facing
+
+storage:
+  storage_class: gp3

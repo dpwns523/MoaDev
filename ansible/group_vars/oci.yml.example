@@ -1,0 +1,18 @@
+---
+# Sample only. Provider-specific overrides for OCI worker nodes.
+
+oci_cluster:
+  region: ap-seoul-1
+  tenancy_ocid: ocid1.tenancy.oc1..exampleuniqueid
+  compartment_ocid: ocid1.compartment.oc1..exampleuniqueid
+  vcn_ocid: ocid1.vcn.oc1.ap-seoul-1.exampleuniqueid
+  worker_subnet_ocids:
+    - ocid1.subnet.oc1.ap-seoul-1.exampleworker1
+    - ocid1.subnet.oc1.ap-seoul-1.exampleworker2
+  worker_shape: VM.Standard.E4.Flex
+  worker_ocpus: 2
+  worker_memory_gbs: 16
+  workload_placement: availability-domain-spread
+
+storage:
+  storage_class: oci-bv

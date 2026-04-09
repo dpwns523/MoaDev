@@ -8,6 +8,8 @@
 - `services/api` for the FastAPI backend
 - `services/agents-runtime` for product-facing agent orchestration
 - `infra/terraform` for cloud infrastructure definitions
+- `ansible` for bootstrap and configuration management inputs
+- `ops/env` for externalized mutable platform config samples
 - `platform/helm` for chart packaging
 - `platform/argocd` for GitOps application definitions
 - `platform/monitoring` for dashboards, alerts, and observability overlays
@@ -22,8 +24,9 @@ The intended product path is:
 2. `services/api` exposes application APIs and domain workflows.
 3. `services/agents-runtime` coordinates product-facing agent execution and background automation.
 4. `infra/terraform` provisions cloud resources used by the services.
-5. `platform/helm` and `platform/argocd` package and promote deployments.
-6. `platform/monitoring` captures metrics, logs, traces, dashboards, and alerts for operators.
+5. `ops/env` and `ansible/group_vars` externalize mutable deployment values so provider-specific topology stays additive and reviewable.
+6. `platform/helm` and `platform/argocd` package and promote deployments.
+7. `platform/monitoring` captures metrics, logs, traces, dashboards, and alerts for operators.
 
 ## Engineering Boundaries
 

@@ -46,6 +46,8 @@ These commands are rooted in the workspace scaffolds under `apps/`, `services/`,
 - `services/api/`: FastAPI API
 - `services/agents-runtime/`: product-facing agent orchestration
 - `infra/terraform/`: cloud infrastructure
+- `ansible/`: infrastructure bootstrap and configuration management inputs
+- `ops/env/`: sample mutable platform configuration for operators
 - `platform/helm/`: Helm chart
 - `platform/argocd/`: GitOps applications
 - `platform/monitoring/`: observability overlays

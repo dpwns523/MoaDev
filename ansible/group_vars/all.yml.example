@@ -1,0 +1,89 @@
+---
+# Sample only. Copy to all.yml and replace with deployment-specific values outside version control.
+
+service_name: moadev
+platform_topology: multicloud
+
+cluster_topology:
+  cluster_name: moadev-multicloud
+  kubernetes_version: "1.34.2"
+  control_plane_provider: aws
+  cni_plugin: calico
+  pod_cidr: 10.0.0.0/16
+  service_cidr: 10.96.0.0/12
+  node_groups:
+    aws_control_plane:
+      provider: aws
+      role: control-plane
+      desired_count: 1
+      min_count: 1
+      max_count: 3
+      scaling_strategy: manual
+    aws_workers:
+      provider: aws
+      role: worker
+      desired_count: 3
+      min_count: 3
+      max_count: 6
+      scaling_strategy: manual
+    oci_workers:
+      provider: oci
+      role: worker
+      desired_count: 3
+      min_count: 3
+      max_count: 6
+      scaling_strategy: manual
+
+domains:
+  base: moadev.example.invalid
+  web: app.moadev.example.invalid
+  api: api.moadev.example.invalid
+  argocd: argocd.moadev.example.invalid
+  grafana: grafana.moadev.example.invalid
+
+images:
+  registry: registry.example.invalid/moadev
+  web_repository: web
+  api_repository: api
+  agents_runtime_repository: agents-runtime
+  tag: stable
+
+namespaces:
+  app: moadev
+  platform: moadev-platform
+  monitoring: moadev-monitoring
+  cicd: moadev-cicd
+
+ingress:
+  class_name: nginx
+  controller_replicas: 2
+  load_balancer_provider: aws
+
+scheduling:
+  default_node_group: aws_workers
+  profile: multi-cloud-balanced
+  topology_spread_policy: soft
+
+cicd:
+  gitops_repository: github.com/dpwns523/MoaDev
+  gitops_revision: main
+  sync_wave: 10
+  artifact_retention_days: 14
+
+monitoring:
+  prometheus_retention: 15d
+  loki_retention: 7d
+  grafana_admin_group: platform-admins
+  alert_route_email: platform-alerts@example.invalid
+
+storage:
+  artifact_bucket: moadev-artifacts-example
+  backup_bucket: moadev-backups-example
+  snapshot_schedule: "0 2 * * *"
+
+cost_automation:
+  cost_center: engineering-platform
+  monthly_budget_usd: 500
+  idle_scale_down_enabled: true
+  idle_scale_down_schedule: "0 22 * * 1-5"
+  report_schedule: "0 9 * * 1"

@@ -1,0 +1,144 @@
+# Sample only. Copy to terraform.tfvars and replace with environment-specific values outside version control.
+
+service_name      = "moadev"
+platform_topology = "multicloud"
+
+cluster_topology = {
+  cluster_name           = "moadev-dev-multicloud"
+  kubernetes_version     = "1.34.2"
+  control_plane_provider = "aws"
+  cni_plugin             = "calico"
+  pod_cidr               = "10.0.0.0/16"
+  service_cidr           = "10.96.0.0/12"
+  node_groups = {
+    aws_control_plane = {
+      provider         = "aws"
+      role             = "control-plane"
+      desired_count    = 1
+      min_count        = 1
+      max_count        = 3
+      scaling_strategy = "manual"
+    }
+    aws_workers = {
+      provider         = "aws"
+      role             = "worker"
+      desired_count    = 3
+      min_count        = 3
+      max_count        = 6
+      scaling_strategy = "manual"
+    }
+    oci_workers = {
+      provider         = "oci"
+      role             = "worker"
+      desired_count    = 3
+      min_count        = 3
+      max_count        = 6
+      scaling_strategy = "manual"
+    }
+  }
+}
+
+domains = {
+  base    = "dev.moadev.example.invalid"
+  web     = "app.dev.moadev.example.invalid"
+  api     = "api.dev.moadev.example.invalid"
+  argocd  = "argocd.dev.moadev.example.invalid"
+  grafana = "grafana.dev.moadev.example.invalid"
+}
+
+images = {
+  registry                  = "registry.example.invalid/moadev"
+  web_repository            = "web"
+  api_repository            = "api"
+  agents_runtime_repository = "agents-runtime"
+  tag                       = "2026.03-dev"
+}
+
+namespaces = {
+  app        = "moadev-dev"
+  platform   = "moadev-platform-dev"
+  monitoring = "moadev-monitoring-dev"
+  cicd       = "moadev-cicd-dev"
+}
+
+ingress = {
+  class_name              = "nginx"
+  controller_replicas     = 2
+  external_dns_zone       = "dev.moadev.example.invalid"
+  load_balancer_provider  = "aws"
+  load_balancer_scheme    = "internet-facing"
+}
+
+scheduling = {
+  default_node_group     = "aws_workers"
+  profile                = "multi-cloud-balanced"
+  topology_spread_policy = "soft"
+}
+
+cicd = {
+  gitops_repository          = "github.com/dpwns523/MoaDev"
+  gitops_revision            = "main"
+  sync_wave                  = 10
+  ci_artifact_retention_days = 14
+}
+
+monitoring = {
+  prometheus_retention = "15d"
+  loki_retention       = "7d"
+  grafana_admin_group  = "platform-admins"
+  alert_route_email    = "platform-alerts@example.invalid"
+}
+
+storage = {
+  artifact_bucket   = "moadev-dev-artifacts-example"
+  backup_bucket     = "moadev-dev-backups-example"
+  snapshot_schedule = "0 2 * * *"
+}
+
+cost_automation = {
+  cost_center              = "engineering-platform-dev"
+  monthly_budget_usd       = 250
+  idle_scale_down_enabled  = true
+  idle_scale_down_schedule = "0 22 * * 1-5"
+  report_schedule          = "0 9 * * 1"
+}
+
+# Keep both provider blocks visible so future Terraform variable plumbing can stay additive.
+# Node counts live in cluster_topology.node_groups to avoid provider-specific duplication.
+oci_cluster = {
+  region             = "ap-seoul-1"
+  tenancy_ocid       = "ocid1.tenancy.oc1..exampleuniqueid"
+  compartment_ocid   = "ocid1.compartment.oc1..exampleuniqueid"
+  vcn_ocid           = "ocid1.vcn.oc1.ap-seoul-1.exampleuniqueid"
+  worker_subnet_ocids = [
+    "ocid1.subnet.oc1.ap-seoul-1.exampleworker1",
+    "ocid1.subnet.oc1.ap-seoul-1.exampleworker2",
+  ]
+  worker_shape       = "VM.Standard.E4.Flex"
+  worker_ocpus       = 2
+  worker_memory_gbs  = 16
+  workload_placement = "availability-domain-spread"
+  storage_class      = "oci-bv"
+}
+
+aws_cluster = {
+  region = "us-west-2"
+  account_id = "123456789012"
+  vpc_id = "vpc-0123456789example"
+  control_plane_subnet_ids = [
+    "subnet-aaaexample",
+    "subnet-bbbexample",
+  ]
+  worker_subnet_ids = [
+    "subnet-eeeexample",
+    "subnet-fffexample",
+  ]
+  public_load_balancer_subnet_ids = [
+    "subnet-cccexample",
+    "subnet-dddexample",
+  ]
+  control_plane_instance_type = "m6i.large"
+  worker_instance_type        = "m6i.large"
+  worker_spot_enabled         = false
+  storage_class               = "gp3"
+}
