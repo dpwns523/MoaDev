@@ -1,0 +1,141 @@
+<svg width="1600" height="980" viewBox="0 0 1600 980" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">MoaDev multi-cloud platform topology</title>
+  <desc id="desc">A documentation diagram showing one logical Kubernetes cluster with an AWS control plane, AWS workers, OCI workers, shared configuration inputs, and tool boundaries.</desc>
+  <!-- Uses official AWS Architecture Icons and Oracle OCI assets vendored under docs/assets/diagrams/vendors. -->
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f8f6f2" />
+      <stop offset="100%" stop-color="#eef2f7" />
+    </linearGradient>
+    <linearGradient id="cluster" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f5f7fb" />
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#516173" />
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#243447" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="980" fill="url(#bg)" />
+
+  <text x="80" y="78" font-size="40" font-family="Arial, sans-serif" font-weight="700" fill="#162231">MoaDev Platform Topology</text>
+  <text x="80" y="114" font-size="19" font-family="Arial, sans-serif" fill="#475566">Current source of truth: one logical multi-cloud cluster, AWS control plane, AWS and OCI worker pools.</text>
+
+  <rect x="80" y="160" width="300" height="300" rx="26" fill="#ffffff" stroke="#d6dee8" stroke-width="2" filter="url(#shadow)" />
+  <text x="110" y="205" font-size="26" font-family="Arial, sans-serif" font-weight="700" fill="#162231">Shared Inputs</text>
+  <text x="110" y="235" font-size="16" font-family="Arial, sans-serif" fill="#516173">The same topology is projected into three sample surfaces.</text>
+
+  <rect x="110" y="265" width="240" height="52" rx="16" fill="#eef5ff" stroke="#bdd3f0" />
+  <text x="128" y="297" font-size="18" font-family="Arial, sans-serif" font-weight="700" fill="#19324d">ops/env</text>
+  <text x="215" y="297" font-size="15" font-family="Arial, sans-serif" fill="#516173">flat shell-friendly values</text>
+
+  <rect x="110" y="332" width="240" height="52" rx="16" fill="#fff4ea" stroke="#f1ceb0" />
+  <text x="128" y="364" font-size="18" font-family="Arial, sans-serif" font-weight="700" fill="#5d3c1e">ansible/group_vars</text>
+  <text x="276" y="364" font-size="15" font-family="Arial, sans-serif" fill="#516173">bootstrap hierarchy</text>
+
+  <rect x="110" y="399" width="240" height="52" rx="16" fill="#f5f1ff" stroke="#cfc2f7" />
+  <text x="128" y="431" font-size="18" font-family="Arial, sans-serif" font-weight="700" fill="#3d3275">terraform.tfvars</text>
+  <text x="260" y="431" font-size="15" font-family="Arial, sans-serif" fill="#516173">typed environment input</text>
+
+  <line x1="380" y1="310" x2="430" y2="310" stroke="#516173" stroke-width="3" marker-end="url(#arrow)" />
+  <line x1="380" y1="430" x2="430" y2="430" stroke="#516173" stroke-width="3" marker-end="url(#arrow)" />
+
+  <rect x="430" y="150" width="1090" height="560" rx="30" fill="url(#cluster)" stroke="#d6dee8" stroke-width="2" filter="url(#shadow)" />
+  <text x="470" y="200" font-size="31" font-family="Arial, sans-serif" font-weight="700" fill="#162231">One Logical Kubernetes Cluster</text>
+  <text x="470" y="232" font-size="17" font-family="Arial, sans-serif" fill="#516173">Shared cluster identity, shared topology contract, worker capacity split across clouds.</text>
+
+  <rect x="470" y="255" width="245" height="38" rx="19" fill="#eef5ff" stroke="#bdd3f0" />
+  <text x="492" y="280" font-size="16" font-family="Arial, sans-serif" fill="#19324d">platform_topology = multicloud</text>
+  <rect x="730" y="255" width="230" height="38" rx="19" fill="#fff4ea" stroke="#f1ceb0" />
+  <text x="752" y="280" font-size="16" font-family="Arial, sans-serif" fill="#6f461b">control_plane_provider = aws</text>
+  <rect x="975" y="255" width="160" height="38" rx="19" fill="#edf8ee" stroke="#c3dfc7" />
+  <text x="1005" y="280" font-size="16" font-family="Arial, sans-serif" fill="#2f5b39">CNI = calico</text>
+  <rect x="1150" y="255" width="170" height="38" rx="19" fill="#f5f1ff" stroke="#cfc2f7" />
+  <text x="1180" y="280" font-size="16" font-family="Arial, sans-serif" fill="#3d3275">default = aws_workers</text>
+
+  <rect x="470" y="315" width="480" height="355" rx="24" fill="#fff8f1" stroke="#edc9a6" stroke-width="2" />
+  <image href="vendors/aws/aws-cloud.svg" x="500" y="340" width="34" height="34" />
+  <text x="545" y="365" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#3e2810">AWS</text>
+  <text x="500" y="392" font-size="16" font-family="Arial, sans-serif" fill="#6f461b">AWS hosts the control-plane footprint and one worker pool.</text>
+
+  <rect x="500" y="420" width="420" height="84" rx="20" fill="#ffffff" stroke="#eed9c4" />
+  <image href="vendors/aws/aws-vpc.svg" x="522" y="444" width="32" height="32" />
+  <text x="570" y="450" font-size="18" font-family="Arial, sans-serif" font-weight="700" fill="#162231">AWS network and control-plane footprint</text>
+  <text x="570" y="476" font-size="15" font-family="Arial, sans-serif" fill="#516173">Shared cluster CIDRs, VPC/subnets, and the control-plane provider default.</text>
+
+  <rect x="500" y="524" width="200" height="118" rx="20" fill="#ffffff" stroke="#eed9c4" />
+  <image href="vendors/aws/aws-ec2-instance.svg" x="522" y="546" width="32" height="32" />
+  <image href="vendors/aws/aws-category-containers.svg" x="560" y="546" width="32" height="32" />
+  <text x="610" y="554" font-size="18" font-family="Arial, sans-serif" font-weight="700" fill="#162231">AWS control-plane nodes</text>
+  <text x="522" y="590" font-size="15" font-family="Arial, sans-serif" fill="#516173">role = control-plane</text>
+  <text x="522" y="614" font-size="15" font-family="Arial, sans-serif" fill="#516173">desired = 1, min = 1, max = 3</text>
+
+  <rect x="720" y="524" width="200" height="118" rx="20" fill="#ffffff" stroke="#eed9c4" />
+  <image href="vendors/aws/aws-ec2-instance.svg" x="742" y="546" width="32" height="32" />
+  <text x="790" y="554" font-size="18" font-family="Arial, sans-serif" font-weight="700" fill="#162231">AWS worker pool</text>
+  <text x="742" y="590" font-size="15" font-family="Arial, sans-serif" fill="#516173">role = worker</text>
+  <text x="742" y="614" font-size="15" font-family="Arial, sans-serif" fill="#516173">desired = 3, min = 3, max = 6</text>
+
+  <rect x="980" y="315" width="500" height="355" rx="24" fill="#fff4f1" stroke="#e7c5be" stroke-width="2" />
+  <image href="vendors/oci/oracle-logo.svg" x="1010" y="344" width="120" height="26" />
+  <text x="1145" y="365" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#3f1713">OCI</text>
+  <text x="1010" y="392" font-size="16" font-family="Arial, sans-serif" fill="#7a3d35">OCI extends the same cluster with an additional worker pool.</text>
+
+  <rect x="1010" y="420" width="440" height="118" rx="20" fill="#ffffff" stroke="#ead4ce" />
+  <image href="vendors/oci/oci-worker-pool.svg" x="1032" y="438" width="72" height="60" />
+  <text x="1120" y="454" font-size="20" font-family="Arial, sans-serif" font-weight="700" fill="#162231">OCI worker pool</text>
+  <text x="1120" y="482" font-size="15" font-family="Arial, sans-serif" fill="#516173">role = worker</text>
+  <text x="1120" y="506" font-size="15" font-family="Arial, sans-serif" fill="#516173">desired = 3, min = 3, max = 6</text>
+
+  <rect x="1010" y="558" width="440" height="84" rx="20" fill="#ffffff" stroke="#ead4ce" />
+  <image href="vendors/oci/oci-service-grid.svg" x="1034" y="580" width="46" height="46" />
+  <text x="1096" y="590" font-size="18" font-family="Arial, sans-serif" font-weight="700" fill="#162231">Provider-specific OCI details stay additive</text>
+  <text x="1096" y="616" font-size="15" font-family="Arial, sans-serif" fill="#516173">Shape, OCPU, memory, VCN/subnets, and storage class stay in the OCI block.</text>
+
+  <path d="M924 479 C 975 452, 1000 452, 1010 479" fill="none" stroke="#516173" stroke-width="3" stroke-dasharray="8 8" marker-end="url(#arrow)" />
+  <text x="930" y="445" font-size="15" font-family="Arial, sans-serif" fill="#516173">Same cluster, cross-cloud worker capacity</text>
+
+  <rect x="500" y="650" width="950" height="36" rx="18" fill="#f3f7fb" stroke="#d5e1ed" />
+  <text x="530" y="673" font-size="15" font-family="Arial, sans-serif" fill="#516173">Shared groups: cluster_topology, domains, images, namespaces, ingress, scheduling, cicd, monitoring, storage, cost_automation.</text>
+
+  <text x="80" y="540" font-size="28" font-family="Arial, sans-serif" font-weight="700" fill="#162231">Tool Boundaries</text>
+  <text x="80" y="571" font-size="16" font-family="Arial, sans-serif" fill="#516173">Each tool owns a different layer. This is the contract reviewers should read first.</text>
+
+  <rect x="80" y="610" width="1440" height="270" rx="30" fill="#ffffff" stroke="#d6dee8" stroke-width="2" filter="url(#shadow)" />
+
+  <rect x="120" y="680" width="320" height="150" rx="24" fill="#eef5ff" stroke="#bdd3f0" />
+  <text x="150" y="722" font-size="24" font-family="Arial, sans-serif" font-weight="700" fill="#19324d">Terraform</text>
+  <text x="150" y="754" font-size="16" font-family="Arial, sans-serif" fill="#516173">Creates cloud primitives and future provider wiring.</text>
+  <text x="150" y="781" font-size="15" font-family="Arial, sans-serif" fill="#516173">Owns VPC/VCN, subnets, instances, storage classes.</text>
+  <text x="150" y="806" font-size="15" font-family="Arial, sans-serif" fill="#516173">Does not own app release cadence.</text>
+
+  <rect x="470" y="680" width="320" height="150" rx="24" fill="#fff4ea" stroke="#f1ceb0" />
+  <text x="500" y="722" font-size="24" font-family="Arial, sans-serif" font-weight="700" fill="#5d3c1e">Ansible + Kubespray</text>
+  <text x="500" y="754" font-size="16" font-family="Arial, sans-serif" fill="#516173">Turns hosts into a usable Kubernetes cluster.</text>
+  <text x="500" y="781" font-size="15" font-family="Arial, sans-serif" fill="#516173">Owns host prep, bootstrap, and node join behavior.</text>
+  <text x="500" y="806" font-size="15" font-family="Arial, sans-serif" fill="#516173">Does not own workload packaging.</text>
+
+  <rect x="820" y="680" width="320" height="150" rx="24" fill="#edf8ee" stroke="#c3dfc7" />
+  <text x="850" y="722" font-size="24" font-family="Arial, sans-serif" font-weight="700" fill="#2f5b39">Helm</text>
+  <text x="850" y="754" font-size="16" font-family="Arial, sans-serif" fill="#516173">Packages workloads into Kubernetes manifests.</text>
+  <text x="850" y="781" font-size="15" font-family="Arial, sans-serif" fill="#516173">Owns deployment templates and chart values.</text>
+  <text x="850" y="806" font-size="15" font-family="Arial, sans-serif" fill="#516173">Does not create infrastructure primitives.</text>
+
+  <rect x="1170" y="680" width="320" height="150" rx="24" fill="#f5f1ff" stroke="#cfc2f7" />
+  <text x="1200" y="722" font-size="24" font-family="Arial, sans-serif" font-weight="700" fill="#3d3275">Argo CD</text>
+  <text x="1200" y="754" font-size="16" font-family="Arial, sans-serif" fill="#516173">Promotes releases into each environment.</text>
+  <text x="1200" y="781" font-size="15" font-family="Arial, sans-serif" fill="#516173">Owns sync orchestration and deployment order.</text>
+  <text x="1200" y="806" font-size="15" font-family="Arial, sans-serif" fill="#516173">Does not bootstrap the cluster itself.</text>
+
+  <line x1="655" y1="710" x2="655" y2="650" stroke="#516173" stroke-width="3" marker-end="url(#arrow)" />
+  <line x1="1030" y1="710" x2="1030" y2="650" stroke="#516173" stroke-width="3" marker-end="url(#arrow)" />
+
+  <image href="vendors/aws/aws-route53.svg" x="510" y="616" width="28" height="28" />
+  <image href="vendors/aws/aws-elb.svg" x="548" y="616" width="28" height="28" />
+  <image href="vendors/aws/aws-codepipeline.svg" x="586" y="616" width="28" height="28" />
+  <image href="vendors/aws/aws-cloudwatch.svg" x="624" y="616" width="28" height="28" />
+  <text x="668" y="635" font-size="15" font-family="Arial, sans-serif" fill="#516173">Sample AWS-integrated ingress, DNS, CI/CD, and observability defaults.</text>
+</svg>

@@ -6,6 +6,50 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `platform-topology-docs`
+
+- Date: `2026-04-15`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Added a dedicated platform topology document in English and Korean, plus a visual architecture diagram built from vendored official AWS and Oracle icon assets.
+
+### User Impact
+
+- Who is affected: contributors and operators reviewing the current multi-cloud runtime shape
+- What users will notice: the repository now has a plain-language topology guide, a Korean version, and a single visual diagram that explains the AWS control plane, AWS worker pool, OCI worker pool, and tool boundaries
+- Expected benefits: faster review, fewer mismatched interpretations of `environment` versus `provider`, and a clearer handoff contract across Terraform, Ansible, Kubespray, Helm, and Argo CD
+
+### Migration Notes
+
+- Required upgrade steps: none
+- Data or config changes: none
+- Operator actions: use `docs/platform-topology.md` or `docs/platform-topology.ko.md` as the entry point before modifying platform sample values
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- None.
+
+### Rollback Notes
+
+- Rollback trigger: the new topology documents or diagram no longer match the checked-in platform samples
+- Rollback steps: remove or update the topology docs together with the sample config model so the documentation does not drift
+- Data recovery notes: none
+
+### Known Issues
+
+- The diagram documents the intended contract and sample defaults, not completed live Terraform or Kubespray wiring.
+
+---
+
 ## Release: `multicloud-config-samples`
 
 - Date: `2026-04-09`

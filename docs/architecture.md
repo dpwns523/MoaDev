@@ -28,6 +28,23 @@ The intended product path is:
 6. `platform/helm` and `platform/argocd` package and promote deployments.
 7. `platform/monitoring` captures metrics, logs, traces, dashboards, and alerts for operators.
 
+## Platform Topology
+
+The current platform source of truth is documented in:
+
+- `docs/platform-topology.md`
+- `docs/platform-topology.ko.md`
+- `docs/assets/diagrams/platform-topology.svg`
+
+These documents intentionally follow the checked-in sample configs on `main`, which currently describe one logical multi-cloud Kubernetes cluster with:
+
+- `platform_topology = multicloud`
+- `control_plane_provider = aws`
+- `aws_control_plane`, `aws_workers`, and `oci_workers` node groups
+- provider-specific overrides kept under `aws_cluster` and `oci_cluster`
+
+Use the dedicated topology docs when reviewing infrastructure boundaries, runtime shape, or how Terraform, Ansible, Kubespray, Helm, and Argo CD hand off responsibility to each other.
+
 ## Engineering Boundaries
 
 - Keep route handlers thin and move domain logic into service or domain modules.

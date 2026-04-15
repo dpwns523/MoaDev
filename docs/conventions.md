@@ -69,6 +69,15 @@ Keep business logic out of `scripts/` and keep test-only helpers out of `src/` u
 - Use checked-in examples such as `.env.example` for names and documentation, never for real secrets.
 - Keep names explicit and scoped, for example `OPENAI_API_KEY` or `DATABASE_URL`.
 
+## Platform Configuration Vocabulary
+
+- `environment` selects the deployment stage, such as `dev` or `prod`.
+- `provider` selects the cloud that owns a specific infrastructure primitive, such as `aws` or `oci`.
+- `platform_topology` describes the overall deployment shape, such as `multicloud`.
+- Keep shared cluster shape in `cluster_topology` and keep cloud-specific compute, network, and storage details in provider-specific blocks such as `aws_cluster` and `oci_cluster`.
+- Keep node counts and node roles under shared `cluster_topology.node_groups` instead of duplicating them across provider-specific sections.
+- Terraform owns infrastructure primitives, Ansible and Kubespray own bootstrap, Helm owns workload packaging, and Argo CD owns promotion.
+
 ## API Responses And Errors
 
 - Use consistent JSON responses.
