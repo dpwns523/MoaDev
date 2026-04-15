@@ -23,4 +23,4 @@ WORKDIR /app
 RUN addgroup --system app && adduser --system --ingroup app app
 COPY --from=builder /opt/venv /opt/venv
 USER app
-CMD ["python", "-m", "app.runtime"]
+CMD ["python", "-m", "app.worker"]

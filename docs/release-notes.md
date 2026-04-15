@@ -200,7 +200,7 @@ Added production-oriented container packaging for the Next.js web app, FastAPI A
 ### User Impact
 
 - Who is affected: contributors and operators packaging or self-hosting the application surfaces
-- What users will notice: `apps/web`, `services/api`, and `services/agents-runtime` now each include a production-focused Dockerfile plus workspace-local `.dockerignore` guidance
+- What users will notice: `apps/web`, `services/api`, and `services/agents-runtime` now each include a production-focused Dockerfile, and repository-root `.dockerignore` rules now protect root-context image builds
 - Expected benefits: smaller runtime images, clearer deployment handoff, and a direct path to building service images without baking secrets into source control
 
 ### Migration Notes
@@ -213,7 +213,11 @@ Added production-oriented container packaging for the Next.js web app, FastAPI A
 
 | Name | Required | Default | Description |
 |------|----------|---------|-------------|
-| `None` | no | none | No new environment variables were introduced. |
+| `AGENTS_RUNTIME_LOG_LEVEL` | no | `INFO` | Python logging level for the runtime worker. |
+| `AGENTS_RUNTIME_MAX_BATCH_SIZE` | no | `3` | Maximum number of signals included in each planned batch. |
+| `AGENTS_RUNTIME_POLL_INTERVAL_SECONDS` | no | `30` | Delay between worker polling cycles. |
+| `AGENTS_RUNTIME_RUN_ONCE` | no | `false` | Run a single planning cycle and exit, useful for validation and one-shot jobs. |
+| `AGENTS_RUNTIME_SIGNALS_JSON` | no | `[]` | JSON array of seed signals used until a real upstream signal source is wired in. |
 
 ### Breaking Changes
 
@@ -229,8 +233,7 @@ Added production-oriented container packaging for the Next.js web app, FastAPI A
 
 - Audit snapshot: packaging had no Dockerfiles or container build automation before this change; `.github` currently contains issue and PR templates only, with no workflow files for image build or publish automation.
 - Audit snapshot: `infra/terraform` exists and is wired into root verification, but `platform/helm`, `platform/argocd`, and `platform/monitoring` are still referenced by docs without corresponding directories in the repository.
-- Audit snapshot: the service-local `.dockerignore` files document intended workspace exclusions, but the current root-context validation commands still send the repository root as Docker build context.
-- Follow-up likely needed: `services/agents-runtime` is now packageable as an image, but it still lacks a dedicated long-running worker or service entrypoint.
+- Follow-up likely needed: `services/agents-runtime` now starts a long-running polling worker, but it still needs real upstream signal sources beyond env-provided seed data.
 
 ---
 
