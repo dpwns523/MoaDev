@@ -21,7 +21,7 @@ This document follows the checked-in sample configuration files under `ops/env`,
 Think about the platform in four layers:
 
 1. Shared intent: one logical cluster, one cluster name, one Kubernetes version, one pod and service CIDR plan.
-2. AWS control plane: the cluster control plane is intended to run on AWS-managed infrastructure primitives defined by the future Terraform wiring.
+2. AWS control plane: the cluster control plane is intended to run on self-managed control-plane nodes provisioned on AWS infrastructure by the future Terraform wiring.
 3. Worker capacity in both clouds: `aws_workers` and `oci_workers` both join the same cluster as worker node groups.
 4. Workload delivery and operations: Helm packages workloads, Argo CD promotes them, and AWS-oriented ingress and observability integrations are currently the default sample direction.
 
@@ -104,4 +104,4 @@ Provider-specific groups that stay provider-specific:
 
 ## Source Notes
 
-The diagram uses vendor assets vendored into this repository from the official AWS Architecture Icons package and the official Oracle OCI icon toolkit.
+The diagram uses vendor assets vendored into this repository from the official AWS Architecture Icons package and the official Oracle OCI icon toolkit. The AWS control-plane node box intentionally uses generic compute and container imagery so it does not imply a managed Kubernetes product choice.

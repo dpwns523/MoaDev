@@ -46,7 +46,6 @@ Added a dedicated platform topology document in English and Korean, plus a visua
 
 ### Known Issues
 
-- The current document follows the checked-in multi-cloud sample model; older planning language that describes separate AWS and OCI clusters would need explicit alignment before being reused.
 - The diagram documents the intended contract and sample defaults, not completed live Terraform or Kubespray wiring.
 
 ---

@@ -21,7 +21,7 @@
 플랫폼을 네 층으로 나누어 보면 이해가 쉽습니다.
 
 1. 공통 의도: 클러스터 이름, Kubernetes 버전, Pod CIDR, Service CIDR 같은 값은 하나의 논리적 클러스터 기준으로 공유합니다.
-2. AWS control plane: control plane 은 AWS 쪽 인프라 primitive 를 기준으로 운영하는 방향입니다.
+2. AWS control plane: control plane 은 향후 Terraform wiring 이 AWS 인프라 위에 올리는 self-managed control-plane node 기준으로 운영하는 방향입니다.
 3. 양쪽 클라우드의 worker capacity: `aws_workers` 와 `oci_workers` 가 같은 클러스터의 worker node group 으로 붙습니다.
 4. 배포와 운영: Helm 이 패키징을 담당하고 Argo CD 가 승격을 담당하며, ingress 와 관측성 연동은 현재 샘플상 AWS 중심 기본값을 가집니다.
 
@@ -104,4 +104,4 @@ provider 별로 유지해야 하는 그룹:
 
 ## 출처 메모
 
-다이어그램은 공식 AWS Architecture Icons 패키지와 공식 Oracle OCI 아이콘 툴킷에서 가져온 벤더 자산을 저장소 안에 vendoring 해서 사용합니다.
+다이어그램은 공식 AWS Architecture Icons 패키지와 공식 Oracle OCI 아이콘 툴킷에서 가져온 벤더 자산을 저장소 안에 vendoring 해서 사용합니다. AWS control-plane node 박스는 managed Kubernetes 제품처럼 읽히지 않도록 generic compute 와 container 계열 아이콘을 사용합니다.
