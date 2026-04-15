@@ -187,6 +187,56 @@ Hardened the `/api/v1/feeds` response boundary so malformed feed items consisten
 
 ---
 
+## Release: `container-packaging-scaffolds`
+
+- Date: `2026-03-30`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Added production-oriented container packaging for the Next.js web app, FastAPI API, and agent runtime, including standalone web output for self-hosted deployment.
+
+### User Impact
+
+- Who is affected: contributors and operators packaging or self-hosting the application surfaces
+- What users will notice: `apps/web`, `services/api`, and `services/agents-runtime` now each include a production-focused Dockerfile, and repository-root `.dockerignore` rules now protect root-context image builds
+- Expected benefits: smaller runtime images, clearer deployment handoff, and a direct path to building service images without baking secrets into source control
+
+### Migration Notes
+
+- Required upgrade steps: provide runtime secrets and environment-specific configuration at deploy time instead of baking them into images
+- Data or config changes: none
+- Operator actions: build from the repository root with `docker build -f apps/web/Dockerfile .`, `docker build -f services/api/Dockerfile .`, and `docker build -f services/agents-runtime/Dockerfile .`
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `AGENTS_RUNTIME_LOG_LEVEL` | no | `INFO` | Python logging level for the runtime worker. |
+| `AGENTS_RUNTIME_MAX_BATCH_SIZE` | no | `3` | Maximum number of signals included in each planned batch. |
+| `AGENTS_RUNTIME_POLL_INTERVAL_SECONDS` | no | `30` | Delay between worker polling cycles. |
+| `AGENTS_RUNTIME_RUN_ONCE` | no | `false` | Run a single planning cycle and exit, useful for validation and one-shot jobs. |
+| `AGENTS_RUNTIME_SIGNALS_JSON` | no | `[]` | JSON array of seed signals used until a real upstream signal source is wired in. |
+
+### Breaking Changes
+
+- None.
+
+### Rollback Notes
+
+- Rollback trigger: image builds or self-hosted startup behavior regress for the web or service workspaces
+- Rollback steps: remove the added Docker packaging files and restore the previous non-containerized packaging state
+- Data recovery notes: none
+
+### Known Issues
+
+- Audit snapshot: packaging had no Dockerfiles or container build automation before this change; `.github` currently contains issue and PR templates only, with no workflow files for image build or publish automation.
+- Audit snapshot: `infra/terraform` exists and is wired into root verification, but `platform/helm`, `platform/argocd`, and `platform/monitoring` are still referenced by docs without corresponding directories in the repository.
+- Follow-up likely needed: `services/agents-runtime` now starts a long-running polling worker, but it still needs real upstream signal sources beyond env-provided seed data.
+
+---
+
 ## Release: `core-workspace-scaffolds`
 
 - Date: `2026-03-29`
