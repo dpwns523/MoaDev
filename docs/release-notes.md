@@ -6,6 +6,50 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `terraform-platform-contracts`
+
+- Date: `2026-04-15`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Added a typed Terraform platform contract module and environment-root variable declarations so the checked-in multi-cloud sample tfvars are validated explicitly before broader VM and network scaffold work lands.
+
+### User Impact
+
+- Who is affected: contributors and operators working on Terraform environment roots and sample platform values
+- What users will notice: `infra/terraform/envs/dev` and `infra/terraform/envs/prod` now validate the grouped topology contract, provider-specific placement assumptions, and shared config groups instead of accepting only the old minimal application stub
+- Expected benefits: less drift between sample files and Terraform, earlier validation of multi-cloud topology assumptions, and a clearer handoff into follow-up Terraform module work
+
+### Migration Notes
+
+- Required upgrade steps: refresh any local `terraform.tfvars` copies from the updated examples before running `terraform validate`
+- Data or config changes: AWS and OCI provider blocks now include explicit placement and bastion fields in the example contract
+- Operator actions: run Terraform validation from each environment root after updating local sample copies
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- Terraform environment roots now expect the grouped topology contract instead of only the old minimal application inputs.
+
+### Rollback Notes
+
+- Rollback trigger: the typed contract blocks follow-up scaffold work or cannot be validated in the current environment
+- Rollback steps: remove the platform contract module wiring and revert the environment roots to the minimal application-only inputs
+- Data recovery notes: none
+
+### Known Issues
+
+- The contract validates input shape and cross-field assumptions only; live VM, subnet, and host bootstrap resources still belong to follow-up infrastructure issues.
+
+---
+
 ## Release: `platform-topology-docs`
 
 - Date: `2026-04-15`
