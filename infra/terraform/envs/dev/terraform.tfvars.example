@@ -1,4 +1,5 @@
 # Sample only. Copy to terraform.tfvars and replace with environment-specific values outside version control.
+# Environment is selected by this directory path, not by a provider-specific variable.
 
 service_name      = "moadev"
 platform_topology = "multicloud"
@@ -118,6 +119,8 @@ oci_cluster = {
   worker_ocpus       = 2
   worker_memory_gbs  = 16
   workload_placement = "availability-domain-spread"
+  worker_placement   = "private-subnets"
+  bastion_enabled    = false
   storage_class      = "oci-bv"
 }
 
@@ -140,5 +143,9 @@ aws_cluster = {
   control_plane_instance_type = "m6i.large"
   worker_instance_type        = "m6i.large"
   worker_spot_enabled         = false
+  control_plane_endpoint_access = "private"
+  control_plane_placement       = "private-subnets"
+  worker_placement              = "private-subnets"
+  bastion_enabled               = false
   storage_class               = "gp3"
 }
