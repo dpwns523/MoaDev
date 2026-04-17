@@ -1,12 +1,29 @@
 # MoaDev
 
-Monorepo bootstrap for:
+Authenticated AI knowledge web application monorepo for:
 - web frontend (`apps/web`)
 - API (`services/api`)
 - agent runtime (`services/agents-runtime`)
 - infrastructure (`infra/terraform`)
 - platform delivery (`platform/helm`, `platform/argocd`)
 - monitoring (`platform/monitoring`)
+
+Current product direction:
+- aggregate useful external technology content
+- provide structured Korean translation and explanation outputs per article
+- require authenticated access to the web application
+- grow toward a broader knowledge platform in later phases
+
+Primary product docs:
+- `docs/prd.md`
+- `docs/prd.ko.md`
+- `docs/product-plan.md`
+- `docs/product-plan.ko.md`
+- `docs/agents-product.md`
+- `docs/agents-product.ko.md`
+- `docs/architecture.md`
+- `docs/production-plan.md`
+- `docs/production-plan.ko.md`
 
 ## Quick start
 

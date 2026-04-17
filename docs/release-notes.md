@@ -6,6 +6,51 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `ai-knowledge-product-plan`
+
+- Date: `2026-04-17`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Reframed the repository from a generic developer feed direction to an authenticated AI knowledge product plan, and added English and Korean planning docs for product scope, product-facing agent roles, and first-production application architecture.
+
+### User Impact
+
+- Who is affected: contributors, operators, and reviewers planning the next implementation phase
+- What users will notice: the repository now defines `MoaDev` as an authenticated article-centric knowledge product with explicit translation, glossary, concept, related-concept, and categorization requirements
+- Expected benefits: clearer scope for API, web, runtime, auth, and platform work, plus less drift between product ambition and infrastructure planning
+
+### Migration Notes
+
+- Required upgrade steps: none
+- Data or config changes: none
+- Operator actions: use `docs/prd.md`, `docs/agents-product.md`, and `docs/production-plan.md` before starting new feature or platform implementation work
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- Product planning assumptions changed from a feed-first developer signal surface to an authenticated AI knowledge workflow for approved technology content.
+
+### Rollback Notes
+
+- Rollback trigger: the new product definition is rejected or proves incompatible with the current repository direction
+- Rollback steps: revert the PRD, product-plan, agent-role, and production-plan document set together so the repository returns to one consistent planning state
+- Data recovery notes: none
+
+### Known Issues
+
+- Source licensing, raw content retention policy, and exact auth provider choice remain open decisions.
+- The runtime, API, and web code still need implementation work to match the new plan.
+
+---
+
 ## Release: `terraform-platform-contracts`
 
 - Date: `2026-04-15`
