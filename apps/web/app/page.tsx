@@ -1,3 +1,8 @@
+import { redirect } from "next/navigation";
+import type { Session } from "next-auth";
+
+import { auth, signOut } from "../auth";
+import { buildApiAuthHeaders } from "../lib/auth/api-user-context";
 import { getHomeContent } from "../lib/get-home-content";
 import { getHomeFeed, type HomeFeedItem } from "../lib/get-home-feed";
 
@@ -8,8 +13,17 @@ const briefingNotes = [
 ];
 
 export default async function HomePage() {
+  const session = await auth();
+  const sessionUser = readAuthenticatedSessionUser(session);
+
+  if (!sessionUser) {
+    redirect("/login");
+  }
+
   const sections = getHomeContent();
-  const feed = await getHomeFeed();
+  const feed = await getHomeFeed({
+    apiHeaders: buildApiAuthHeaders(sessionUser),
+  });
   const [leadStory, ...secondaryStories] = feed.items;
 
   return (
@@ -19,7 +33,25 @@ export default async function HomePage() {
           <span className="masthead__brand-mark">M</span>
           <span>MoaDev Journal</span>
         </div>
-        <div className="masthead__meta">Issue #6 web home, built for live API briefing and quiet review.</div>
+        <div className="masthead__controls">
+          <div className="masthead__meta">
+            <span>{sessionUser.name ?? sessionUser.email ?? sessionUser.id}</span>
+            <span>Signed in with {formatSource(sessionUser.provider ?? "authenticated-session")}</span>
+          </div>
+          <form
+            action={async () => {
+              "use server";
+
+              await signOut({
+                redirectTo: "/login",
+              });
+            }}
+          >
+            <button className="masthead__signout" type="submit">
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       <section className="hero">
@@ -45,6 +77,10 @@ export default async function HomePage() {
             <p>{getStorySummary(leadStory)}</p>
           </div>
           <dl className="hero__stats">
+            <div>
+              <dt>Signed-in user</dt>
+              <dd>{sessionUser.name ?? sessionUser.email ?? sessionUser.id}</dd>
+            </div>
             <div>
               <dt>Lead source</dt>
               <dd>{formatSource(leadStory.source)}</dd>
@@ -162,4 +198,28 @@ function getSignalDescription(story: HomeFeedItem): string {
   }
 
   return "An editorial signal card for launches, ecosystem movement, and product changes that affect technical decisions.";
+}
+
+type SessionUser = {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+  image?: string | null;
+  provider?: string | null;
+};
+
+function readAuthenticatedSessionUser(session: Session | null) {
+  const sessionUser = session?.user as SessionUser | undefined;
+
+  if (!sessionUser?.id) {
+    return null;
+  }
+
+  return {
+    id: sessionUser.id,
+    email: sessionUser.email ?? null,
+    name: sessionUser.name ?? null,
+    image: sessionUser.image ?? null,
+    provider: sessionUser.provider ?? null,
+  };
 }

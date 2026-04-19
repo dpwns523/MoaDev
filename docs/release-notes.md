@@ -6,6 +6,58 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `authenticated-session-boundary`
+
+- Date: `2026-04-19`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Added an authenticated session boundary across `apps/web` and `services/api` using Auth.js OAuth in the web app plus a signed internal bearer token contract for protected API requests.
+
+### User Impact
+
+- Who is affected: product users signing in to the MVP knowledge workflow, contributors wiring local auth, and operators configuring application secrets
+- What users will notice: the web application now redirects unauthenticated visitors to a login page, and the FastAPI feed endpoint requires a valid authenticated token instead of behaving like a public scaffold
+- Expected benefits: the product now matches the closed MVP direction, OAuth provider wiring is explicit, and follow-up article APIs can build on a defined authenticated request boundary
+
+### Migration Notes
+
+- Required upgrade steps: configure `AUTH_SECRET`, at least one supported OAuth provider, and the shared `MOADEV_INTERNAL_AUTH_SECRET` before expecting the web and API integration to work end to end
+- Data or config changes: `/api/v1/feeds` is no longer anonymous; `apps/web` forwards a signed internal bearer token to `services/api`
+- Operator actions: register `http://localhost:3000/api/auth/callback/<provider>` for local OAuth apps and share the same internal auth secret between web and API
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `AUTH_SECRET` | yes | none | Auth.js session secret for `apps/web`. |
+| `AUTH_GOOGLE_ID` | no | none | Google OAuth client ID for `apps/web`. |
+| `AUTH_GOOGLE_SECRET` | no | none | Google OAuth client secret for `apps/web`. |
+| `AUTH_KAKAO_ID` | no | none | Kakao OAuth client ID for `apps/web`. |
+| `AUTH_KAKAO_SECRET` | no | none | Kakao OAuth client secret for `apps/web`. |
+| `AUTH_NAVER_ID` | no | none | Naver OAuth client ID for `apps/web`. |
+| `AUTH_NAVER_SECRET` | no | none | Naver OAuth client secret for `apps/web`. |
+| `MOADEV_INTERNAL_AUTH_SECRET` | yes | none | Shared secret used by `apps/web` to sign the forwarded internal bearer token and by `services/api` to verify it. |
+| `MOADEV_INTERNAL_AUTH_MAX_AGE_SECONDS` | no | `300` | Maximum age for the forwarded authenticated token before the API rejects it. |
+
+### Breaking Changes
+
+- `apps/web` now protects user-facing routes behind login.
+- `/api/v1/feeds` now returns `401` when the authenticated user boundary is missing or invalid.
+
+### Rollback Notes
+
+- Rollback trigger: OAuth provider setup or the internal auth bridge blocks MVP iteration more than it protects it
+- Rollback steps: remove the web route boundary, restore anonymous access to the feed endpoint, and remove the signed internal token dependency from the API
+- Data recovery notes: none
+
+### Known Issues
+
+- Only the auth foundation is implemented in this slice; article, category, and detail APIs still belong to issue `#44`.
+- Local development still requires registering OAuth callbacks for at least one provider unless a later task adds a dedicated development-only sign-in fallback.
+
 ## Release: `terraform-platform-contracts`
 
 - Date: `2026-04-15`

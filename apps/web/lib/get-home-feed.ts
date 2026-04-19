@@ -14,13 +14,20 @@ export type HomeFeedResult = {
 
 type FeedFetcherResponse = {
   ok: boolean;
+  status?: number;
   json: () => Promise<unknown>;
 };
 
-type FeedFetcher = (input: string) => Promise<FeedFetcherResponse>;
+type FeedRequestOptions = {
+  cache?: "no-store";
+  headers?: Record<string, string>;
+};
+
+type FeedFetcher = (input: string, init?: FeedRequestOptions) => Promise<FeedFetcherResponse>;
 
 type GetHomeFeedOptions = {
   apiBaseUrl?: string;
+  apiHeaders?: Record<string, string>;
   fetchFeed?: FeedFetcher;
 };
 
@@ -49,10 +56,17 @@ const FALLBACK_ITEMS: HomeFeedItem[] = [
 
 export async function getHomeFeed(options: GetHomeFeedOptions = {}): Promise<HomeFeedResult> {
   const apiBaseUrl = options.apiBaseUrl ?? process.env.MOADEV_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  const apiHeaders = options.apiHeaders ?? {};
   const fetchFeed = options.fetchFeed ?? defaultFetchFeed;
 
   try {
-    const response = await fetchFeed(buildFeedUrl(apiBaseUrl));
+    const response = await fetchFeed(buildFeedUrl(apiBaseUrl), {
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        ...apiHeaders,
+      },
+    });
 
     if (!response.ok) {
       return buildFallback("Showing preview stories while the FastAPI feed is unavailable.");
@@ -73,15 +87,12 @@ export async function getHomeFeed(options: GetHomeFeedOptions = {}): Promise<Hom
   }
 }
 
-async function defaultFetchFeed(input: string): Promise<FeedFetcherResponse> {
-  const response = await fetch(input, {
-    headers: {
-      accept: "application/json",
-    },
-  });
+async function defaultFetchFeed(input: string, init?: FeedRequestOptions): Promise<FeedFetcherResponse> {
+  const response = await fetch(input, init);
 
   return {
     ok: response.ok,
+    status: response.status,
     json: async () => response.json(),
   };
 }
