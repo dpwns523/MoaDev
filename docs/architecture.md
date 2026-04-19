@@ -20,13 +20,51 @@ The repository still keeps early bootstrap placeholders under `src/`, `tests/`, 
 
 The intended product path is:
 
-1. `apps/web` renders the developer-facing UI.
-2. `services/api` exposes application APIs and domain workflows.
-3. `services/agents-runtime` coordinates product-facing agent execution and background automation.
+1. `apps/web` renders the authenticated knowledge UI.
+2. `services/api` exposes auth-aware application APIs and article query workflows.
+3. `services/agents-runtime` coordinates product-facing ingestion, translation, enrichment, and publishing work.
 4. `infra/terraform` provisions cloud resources used by the services.
 5. `ops/env` and `ansible/group_vars` externalize mutable deployment values so provider-specific topology stays additive and reviewable.
 6. `platform/helm` and `platform/argocd` package and promote deployments.
 7. `platform/monitoring` captures metrics, logs, traces, dashboards, and alerts for operators.
+
+## Product Planning Sources
+
+The current product and production source-of-truth documents are:
+
+- `docs/prd.md`
+- `docs/prd.ko.md`
+- `docs/product-plan.md`
+- `docs/product-plan.ko.md`
+- `docs/agents-product.md`
+- `docs/agents-product.ko.md`
+- `docs/production-plan.md`
+- `docs/production-plan.ko.md`
+
+Use these documents together when reviewing product scope, agent responsibilities, and first-production architecture.
+
+## First-Production Application Flow
+
+The current first-production plan assumes one authenticated AI knowledge workflow:
+
+1. approved sources are ingested asynchronously by `services/agents-runtime`
+2. article content is normalized into stable segments
+3. translation, summary, glossary, concept explanations, and related concepts are generated off the request path
+4. published article records are stored and exposed through `services/api`
+5. authenticated users read categorized article lists and detail views in `apps/web`
+
+The first release deliberately keeps AI processing asynchronous and keeps end-user reads on precomputed article records instead of inline model generation.
+
+## First-Production Data And Service Boundaries
+
+- `apps/web` owns authenticated UI and knowledge navigation
+- `services/api` owns user-facing read APIs, auth-aware access control, and article/query boundaries
+- `services/agents-runtime` owns async ingestion and enrichment
+- `PostgreSQL` should remain the first system of record for article metadata, normalized segments, and structured outputs
+- `Redis` should back queues, retries, and selective caching
+- object storage should hold raw snapshots or larger artifacts when provider policy allows
+
+The detailed first-production design is documented in `docs/production-plan.md` and `docs/production-plan.ko.md`.
 
 ## Authenticated Session Boundary
 

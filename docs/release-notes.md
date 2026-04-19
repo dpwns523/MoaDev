@@ -41,22 +41,59 @@ Added an authenticated session boundary across `apps/web` and `services/api` usi
 | `AUTH_NAVER_SECRET` | no | none | Naver OAuth client secret for `apps/web`. |
 | `MOADEV_INTERNAL_AUTH_SECRET` | yes | none | Shared secret used by `apps/web` to sign the forwarded internal bearer token and by `services/api` to verify it. |
 | `MOADEV_INTERNAL_AUTH_MAX_AGE_SECONDS` | no | `300` | Maximum age for the forwarded authenticated token before the API rejects it. |
-
-### Breaking Changes
-
-- `apps/web` now protects user-facing routes behind login.
-- `/api/v1/feeds` now returns `401` when the authenticated user boundary is missing or invalid.
-
-### Rollback Notes
-
-- Rollback trigger: OAuth provider setup or the internal auth bridge blocks MVP iteration more than it protects it
-- Rollback steps: remove the web route boundary, restore anonymous access to the feed endpoint, and remove the signed internal token dependency from the API
 - Data recovery notes: none
 
 ### Known Issues
 
 - Only the auth foundation is implemented in this slice; article, category, and detail APIs still belong to issue `#44`.
 - Local development still requires registering OAuth callbacks for at least one provider unless a later task adds a dedicated development-only sign-in fallback.
+
+---
+
+## Release: `ai-knowledge-product-plan`
+
+- Date: `2026-04-17`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Reframed the repository from a generic developer feed direction to an authenticated AI knowledge product plan, and added English and Korean planning docs for product scope, product-facing agent roles, and first-production application architecture.
+
+### User Impact
+
+- Who is affected: contributors, operators, and reviewers planning the next implementation phase
+- What users will notice: the repository now defines `MoaDev` as an authenticated article-centric knowledge product with explicit translation, glossary, concept, related-concept, and categorization requirements
+- Expected benefits: clearer scope for API, web, runtime, auth, and platform work, plus less drift between product ambition and infrastructure planning
+
+### Migration Notes
+
+- Required upgrade steps: none
+- Data or config changes: none
+- Operator actions: use `docs/prd.md`, `docs/agents-product.md`, and `docs/production-plan.md` before starting new feature or platform implementation work
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- Product planning assumptions changed from a feed-first developer signal surface to an authenticated AI knowledge workflow for approved technology content.
+
+### Rollback Notes
+
+- Rollback trigger: the new product definition is rejected or proves incompatible with the current repository direction
+- Rollback steps: revert the PRD, product-plan, agent-role, and production-plan document set together so the repository returns to one consistent planning state
+- Data recovery notes: none
+
+### Known Issues
+
+- Source licensing, raw content retention policy, and exact auth provider choice remain open decisions.
+- The runtime, API, and web code still need implementation work to match the new plan.
+
+---
 
 ## Release: `terraform-platform-contracts`
 
