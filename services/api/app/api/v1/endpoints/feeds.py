@@ -17,7 +17,16 @@ def build_feed_response() -> FeedResponse:
     return FeedResponse(data=feeds, meta={"total": len(feeds)})
 
 
-@router.get("", response_model=FeedResponse, responses={500: {"model": ErrorResponse}})
+@router.get(
+    "",
+    response_model=FeedResponse,
+    responses={
+        401: {"model": ErrorResponse},
+        403: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+    },
+)
 def read_feeds() -> Union[FeedResponse, JSONResponse]:
     try:
         return build_feed_response()

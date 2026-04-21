@@ -75,8 +75,46 @@ a {
 }
 
 .masthead__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   color: var(--text-secondary);
   font-size: 0.9rem;
+}
+
+.masthead__controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.masthead__signout,
+.auth-provider-button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: var(--text-primary);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+}
+
+.masthead__signout:hover,
+.auth-provider-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.masthead__signout:focus-visible,
+.auth-provider-button:focus-visible {
+  outline: 3px solid rgba(10, 103, 255, 0.3);
+  outline-offset: 2px;
 }
 
 .hero {
@@ -351,6 +389,72 @@ a {
   border-radius: 24px;
 }
 
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: min(720px, 100%);
+  display: grid;
+  gap: 22px;
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 32px;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px);
+}
+
+.auth-card h1,
+.auth-setup h2 {
+  margin: 0;
+  font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  letter-spacing: -0.03em;
+}
+
+.auth-card__intro {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-card__intro p,
+.auth-checklist li,
+.auth-setup p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.auth-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-provider-button {
+  width: 100%;
+  justify-content: center;
+  background: linear-gradient(135deg, #16396f 0%, #0a67ff 100%);
+}
+
+.auth-setup,
+.auth-checklist {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.auth-checklist ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.auth-checklist li + li {
+  margin-top: 10px;
+}
+
 @media (max-width: 1040px) {
   .hero,
   .feed-layout,
@@ -375,6 +479,12 @@ a {
     margin-bottom: 28px;
   }
 
+  .masthead__controls {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .hero__copy,
   .hero__panel,
   .feature-story,
@@ -397,5 +507,10 @@ a {
   .feature-story__footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .auth-card {
+    padding: 24px;
+    border-radius: 24px;
   }
 }

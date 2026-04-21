@@ -66,6 +66,25 @@ The first release deliberately keeps AI processing asynchronous and keeps end-us
 
 The detailed first-production design is documented in `docs/production-plan.md` and `docs/production-plan.ko.md`.
 
+## Authenticated Session Boundary
+
+The current MVP authentication path is intentionally split across the web and API workspaces:
+
+- `apps/web` owns OAuth and session creation through Auth.js.
+- Google, Kakao, and Naver are the first supported identity providers, configured through `AUTH_*` environment variables.
+- `apps/web/proxy.ts` keeps user-facing application routes behind the session boundary and allows only the login page, Auth.js handlers, and framework assets to bypass it.
+- `apps/web` server components and route handlers forward authenticated requests to `services/api` using a signed internal bearer token built from the Auth.js session.
+- `services/api` verifies that token through `app/api/dependencies/auth.py`, `app/core/config.py`, and `app/core/security.py` with a shared `MOADEV_INTERNAL_AUTH_SECRET` plus a short max-age check before protected endpoints run.
+- `/health` remains public for platform health checks. Product APIs such as `/api/v1/feeds` are protected.
+
+This bridge is an MVP contract for issue `#41`. It keeps the API independent from direct OAuth handling while making the authenticated caller explicit for follow-up article APIs in issue `#44`.
+
+### Auth Boundary Error Rules
+
+- `401` means the caller did not provide a valid authenticated bearer token, or the token was expired or tampered with.
+- `403` is reserved for future authorization rules where the caller is authenticated but does not have permission for a specific operation.
+- `503` means the API auth bridge itself is misconfigured, such as a missing shared secret.
+
 ## Platform Topology
 
 The current platform source of truth is documented in:
@@ -92,11 +111,15 @@ Use the dedicated topology docs when reviewing infrastructure boundaries, runtim
 
 ## FastAPI Structure Review
 
-The current `services/api` layout is intentionally small:
+The current `services/api` layout is still intentionally small, but it now has a clearer HTTP/auth split:
 
-- `app/main.py` owns app bootstrap, route handlers, and response schemas.
+- `app/main.py` owns app bootstrap and shared exception-envelope translation.
+- `app/api/` owns router composition and versioned endpoint registration.
+- `app/api/dependencies/auth.py` owns the authenticated request dependency for protected API routes.
+- `app/core/config.py` owns auth-related environment configuration.
+- `app/core/security.py` owns bearer token signing and verification.
 - `app/services/feed_catalog.py` owns the first domain service and domain-level validation.
-- `tests/` covers endpoint behavior and the feed domain boundary.
+- `tests/` covers endpoint behavior, the feed domain boundary, and the auth boundary.
 
 Compared with the referenced FastAPI examples:
 
@@ -120,9 +143,23 @@ Current structure:
 services/api/
   app/
     main.py
+    api/
+      dependencies/
+        auth.py
+      router.py
+      endpoints/
+        health.py
+      v1/
+        router.py
+        endpoints/
+          feeds.py
+    core/
+      config.py
+      security.py
     services/
       feed_catalog.py
   tests/
+    auth_token_helpers.py
     test_main.py
     test_feed_catalog.py
 ```
@@ -158,11 +195,16 @@ This target keeps `main.py` focused on application assembly, moves HTTP concerns
 ```mermaid
 flowchart TD
     subgraph Current["Current services/api shape"]
-        main["app/main.py (bootstrap, routes, response schemas)"]
+        main["app/main.py (bootstrap + exception envelopes)"]
+        router["app/api/* (router composition + endpoints)"]
+        auth["app/api/dependencies/auth.py + app/core/{config,security}.py"]
         service["app/services/feed_catalog.py (feed service + domain validation)"]
-        tests["tests/test_main.py + tests/test_feed_catalog.py"]
-        main --> service
+        tests["tests/test_main.py + auth_token_helpers.py + test_feed_catalog.py"]
+        main --> router
+        router --> auth
+        router --> service
         tests --> main
+        tests --> auth
         tests --> service
     end
 

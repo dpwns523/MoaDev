@@ -5,11 +5,16 @@ import { getHomeFeed } from "./get-home-feed";
 
 test("returns live feed items from the FastAPI contract", async () => {
   let requestedUrl = "";
+  let requestedHeaders: Record<string, string> | undefined;
 
   const feed = await getHomeFeed({
     apiBaseUrl: "https://api.moadev.test",
-    fetchFeed: async (input) => {
+    apiHeaders: {
+      authorization: "Bearer signed-token",
+    },
+    fetchFeed: async (input, init) => {
       requestedUrl = input;
+      requestedHeaders = init?.headers as Record<string, string> | undefined;
 
       return {
         ok: true,
@@ -31,6 +36,10 @@ test("returns live feed items from the FastAPI contract", async () => {
   });
 
   assert.equal(requestedUrl, "https://api.moadev.test/api/v1/feeds");
+  assert.deepEqual(requestedHeaders, {
+    accept: "application/json",
+    authorization: "Bearer signed-token",
+  });
   assert.equal(feed.status, "live");
   assert.equal(feed.total, 1);
   assert.equal(feed.items[0]?.title, "Live story");
