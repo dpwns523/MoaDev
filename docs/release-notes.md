@@ -6,6 +6,51 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `article-persistence-baseline`
+
+- Date: `2026-04-21`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Added the first shared article persistence baseline for `services/api`, including an approved source registry, canonical article records, normalized segments, structured output storage, and Alembic migration scaffolding for the MVP knowledge workflow.
+
+### User Impact
+
+- Who is affected: contributors implementing article ingestion or read APIs, and operators preparing the first database-backed deployment baseline
+- What users will notice: no direct UI change yet, but follow-up article list/detail work can now rely on a concrete persisted contract instead of placeholder-only scaffolding
+- Expected benefits: source policy becomes explicit, article processing state has a durable home, and the API/runtime can converge on one small first-release article model
+
+### Migration Notes
+
+- Required upgrade steps: install the updated `services/api` Python dependencies and configure `DATABASE_URL` before using the new persistence baseline or Alembic migrations
+- Data or config changes: `services/api` now ships an Alembic baseline and a relational schema for source registry, article records, normalized segments, and structured article outputs
+- Operator actions: point `DATABASE_URL` at the first PostgreSQL instance for shared API/runtime use, then run `alembic upgrade head` from `services/api` when bootstrapping the schema
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `DATABASE_URL` | yes | none | Shared SQLAlchemy database URL for the article persistence baseline used by `services/api` and future runtime jobs. |
+
+### Breaking Changes
+
+- `services/api` now expects a database URL to use the article persistence baseline and migration path introduced for issue `#42`.
+
+### Rollback Notes
+
+- Rollback trigger: the chosen relational baseline proves too heavy or the schema contract needs to be redesigned before downstream article APIs land
+- Rollback steps: revert the SQLAlchemy models, Alembic baseline, and `DATABASE_URL` configuration contract together so the repository does not keep a half-adopted persistence path
+- Data recovery notes: no live data migration is included yet because this is the first article persistence baseline
+
+### Known Issues
+
+- The persistence model exists before the article/category/detail APIs in issue `#44`, so no user-facing read endpoints consume this schema yet.
+- The first migration is defined, but production rollout conventions for managed migrations still need to be finalized with the runtime and deployment work.
+
+---
+
 ## Release: `authenticated-session-boundary`
 
 - Date: `2026-04-19`

@@ -66,6 +66,25 @@ The first release deliberately keeps AI processing asynchronous and keeps end-us
 
 The detailed first-production design is documented in `docs/production-plan.md` and `docs/production-plan.ko.md`.
 
+## Article Persistence Baseline
+
+Issue `#42` establishes the first shared article persistence baseline inside `services/api` so the API and runtime can share one explicit MVP data contract.
+
+- `services/api/app/core/db.py` owns `DATABASE_URL` resolution plus reusable SQLAlchemy engine and session-factory setup.
+- `services/api/app/domain/articles/models.py` owns the first persisted article domain model:
+  - `SourceRegistryEntry` for approved source policy and retention metadata
+  - `Article` for canonical article identity, category, tags, timestamps, and processing status
+  - `ArticleSegment` for ordered normalized source segments plus segment-aligned translation text
+  - `ArticleStructuredOutput` for summary, glossary, concept explanations, related concepts, and quality notes
+- `services/api/alembic/` owns schema migration history for the baseline relational model.
+
+The MVP deliberately keeps the model narrow:
+
+- source policy stays in the source registry instead of spreading across article records
+- normalized segments are first-class rows so runtime and API can agree on stable segment ordering
+- richer enrichment payloads stay in JSON fields until product usage proves that further normalization is worth the extra complexity
+- the baseline is shaped for `Keek news` first and does not yet generalize to arbitrary multi-domain ingestion
+
 ## Authenticated Session Boundary
 
 The current MVP authentication path is intentionally split across the web and API workspaces:
@@ -111,15 +130,17 @@ Use the dedicated topology docs when reviewing infrastructure boundaries, runtim
 
 ## FastAPI Structure Review
 
-The current `services/api` layout is still intentionally small, but it now has a clearer HTTP/auth split:
+The current `services/api` layout is still intentionally small, but it now has clearer HTTP, auth, and persistence boundaries:
 
 - `app/main.py` owns app bootstrap and shared exception-envelope translation.
 - `app/api/` owns router composition and versioned endpoint registration.
 - `app/api/dependencies/auth.py` owns the authenticated request dependency for protected API routes.
-- `app/core/config.py` owns auth-related environment configuration.
+- `app/core/config.py` owns auth- and persistence-related environment configuration.
+- `app/core/db.py` owns reusable database engine and session-factory setup.
 - `app/core/security.py` owns bearer token signing and verification.
+- `app/domain/articles/models.py` owns the first shared persistence model for sources, articles, segments, structured outputs, and processing status.
 - `app/services/feed_catalog.py` owns the first domain service and domain-level validation.
-- `tests/` covers endpoint behavior, the feed domain boundary, and the auth boundary.
+- `tests/` covers endpoint behavior, the feed domain boundary, the auth boundary, and article persistence constraints.
 
 Compared with the referenced FastAPI examples:
 
@@ -141,6 +162,10 @@ Current structure:
 
 ```text
 services/api/
+  alembic.ini
+  alembic/
+    env.py
+    versions/
   app/
     main.py
     api/
@@ -155,10 +180,15 @@ services/api/
           feeds.py
     core/
       config.py
+      db.py
       security.py
+    domain/
+      articles/
+        models.py
     services/
       feed_catalog.py
   tests/
+    test_article_persistence.py
     auth_token_helpers.py
     test_main.py
     test_feed_catalog.py
@@ -168,6 +198,8 @@ Recommended incremental target:
 
 ```text
 services/api/
+  alembic/
+    versions/
   app/
     main.py
     api/
@@ -176,12 +208,16 @@ services/api/
         health.py
         feeds.py
     domain/
+      articles/
+        models.py
+        repository.py
       feeds/
         schemas.py
         service.py
         exceptions.py
     core/
       config.py
+      db.py
       errors.py
   tests/
     api/
@@ -198,13 +234,16 @@ flowchart TD
         main["app/main.py (bootstrap + exception envelopes)"]
         router["app/api/* (router composition + endpoints)"]
         auth["app/api/dependencies/auth.py + app/core/{config,security}.py"]
+        persistence["app/core/db.py + app/domain/articles/models.py + alembic/*"]
         service["app/services/feed_catalog.py (feed service + domain validation)"]
-        tests["tests/test_main.py + auth_token_helpers.py + test_feed_catalog.py"]
+        tests["tests/* (API, auth, feed, article persistence)"]
         main --> router
         router --> auth
+        router --> persistence
         router --> service
         tests --> main
         tests --> auth
+        tests --> persistence
         tests --> service
     end
 
