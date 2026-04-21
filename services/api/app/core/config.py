@@ -8,12 +8,14 @@ DEFAULT_INTERNAL_AUTH_MAX_AGE_SECONDS = 300
 
 @dataclass(frozen=True)
 class Settings:
+    database_url: Optional[str]
     internal_auth_secret: Optional[str]
     internal_auth_max_age_seconds: int
 
 
 def get_settings() -> Settings:
     return Settings(
+        database_url=read_optional_env("DATABASE_URL"),
         internal_auth_secret=read_optional_env("MOADEV_INTERNAL_AUTH_SECRET"),
         internal_auth_max_age_seconds=read_positive_int_env(
             "MOADEV_INTERNAL_AUTH_MAX_AGE_SECONDS",
