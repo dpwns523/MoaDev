@@ -140,6 +140,51 @@ Reframed the repository from a generic developer feed direction to an authentica
 
 ---
 
+## Release: `terraform-vm-cluster-foundations`
+
+- Date: `2026-04-21`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Expanded Terraform from a contract-only baseline into AWS and OCI VM-cluster foundation scaffolding with reusable shared-label, networking, compute-intent, and dev-scheduler modules plus an example-driven topology diagram.
+
+### User Impact
+
+- Who is affected: contributors and operators working on Terraform platform scaffolding
+- What users will notice: `infra/terraform/envs/dev` and `infra/terraform/envs/prod` now wire shared labels, AWS/OCI foundation modules, provider version pins, and example tfvars that describe create/reference network modes
+- Expected benefits: clearer reviewable Terraform scope for issue `#13`, less ambiguity around what AWS and OCI foundations are meant to look like, and better alignment between sample values and checked-in docs
+
+### Migration Notes
+
+- Required upgrade steps: rerun `terraform init -backend=false` in each Terraform environment root so the provider lock files match the checked-in constraints
+- Data or config changes: AWS and OCI example tfvars now include explicit network mode, CIDR, subnet layout, and root-volume settings
+- Operator actions: refresh any local `terraform.tfvars` copies from the updated examples before validating or planning Terraform changes
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- Terraform environment roots now expect the expanded `shared_labels`, `aws_cluster`, `oci_cluster`, and optional `aws_dev_scheduler` contract fields used by the foundation modules.
+
+### Rollback Notes
+
+- Rollback trigger: the new network or provider scaffolding blocks Terraform validation in the current contributor environment
+- Rollback steps: remove the foundation module wiring, revert the provider version pins and env-root contract additions, and fall back to the earlier contract-only Terraform state
+- Data recovery notes: none
+
+### Known Issues
+
+- The current Terraform modules create or reference network foundations, but AWS and OCI VM instance resources are still scaffold-level follow-up work inside the same issue track.
+- Local validation currently depends on provider versions that remain compatible with the contributor's installed Terraform CLI.
+
+---
+
 ## Release: `terraform-platform-contracts`
 
 - Date: `2026-04-15`

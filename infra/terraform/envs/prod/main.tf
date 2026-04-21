@@ -1,10 +1,30 @@
 terraform {
   required_version = ">= 1.5.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0, < 6.0.0"
+    }
+    oci = {
+      source  = "oracle/oci"
+      version = ">= 5.0, < 6.0.0"
+    }
+  }
 }
 
 locals {
   # The directory chooses the environment so stage naming stays independent from provider selection.
   environment = "prod"
+
+  default_aws_dev_scheduler = {
+    enabled        = false
+    target_scope   = "disabled"
+    start_schedule = ""
+    stop_schedule  = ""
+  }
+
+  aws_dev_scheduler = var.aws_dev_scheduler == null ? local.default_aws_dev_scheduler : var.aws_dev_scheduler
 }
 
 module "application" {
@@ -33,10 +53,115 @@ module "platform_contract" {
   aws_cluster       = var.aws_cluster
 }
 
+module "shared_labels" {
+  source = "../../modules/shared_labels"
+
+  environment           = local.environment
+  service_name          = var.service_name
+  naming_prefix_pattern = var.shared_labels.naming_prefix_pattern
+  labels                = var.shared_labels.labels
+  cost_center           = var.cost_automation.cost_center
+}
+
+module "aws_network" {
+  source = "../../modules/aws_network"
+
+  environment                              = local.environment
+  cluster_name                             = var.cluster_topology.cluster_name
+  region                                   = var.aws_cluster.region
+  network_mode                             = var.aws_cluster.network_mode
+  name_prefix                              = module.shared_labels.name_prefix
+  labels                                   = module.shared_labels.labels
+  vpc_cidr                                 = var.aws_cluster.vpc_cidr
+  availability_zones                       = var.aws_cluster.availability_zones
+  control_plane_subnet_cidrs               = var.aws_cluster.control_plane_subnet_cidrs
+  worker_subnet_cidrs                      = var.aws_cluster.worker_subnet_cidrs
+  public_load_balancer_subnet_cidrs        = var.aws_cluster.public_load_balancer_subnet_cidrs
+  existing_vpc_id                          = var.aws_cluster.vpc_id != null ? var.aws_cluster.vpc_id : ""
+  existing_control_plane_subnet_ids        = var.aws_cluster.control_plane_subnet_ids
+  existing_worker_subnet_ids               = var.aws_cluster.worker_subnet_ids
+  existing_public_load_balancer_subnet_ids = var.aws_cluster.public_load_balancer_subnet_ids
+}
+
+module "oci_network" {
+  source = "../../modules/oci_network"
+
+  environment                  = local.environment
+  cluster_name                 = var.cluster_topology.cluster_name
+  region                       = var.oci_cluster.region
+  compartment_ocid             = var.oci_cluster.compartment_ocid
+  network_mode                 = var.oci_cluster.network_mode
+  name_prefix                  = module.shared_labels.name_prefix
+  labels                       = module.shared_labels.labels
+  vcn_cidr                     = var.oci_cluster.vcn_cidr
+  availability_domains         = var.oci_cluster.availability_domains
+  worker_subnet_cidrs          = var.oci_cluster.worker_subnet_cidrs
+  existing_vcn_ocid            = var.oci_cluster.vcn_ocid != null ? var.oci_cluster.vcn_ocid : ""
+  existing_worker_subnet_ocids = var.oci_cluster.worker_subnet_ocids
+}
+
+module "aws_compute_nodes" {
+  source = "../../modules/aws_compute_nodes"
+
+  cluster_topology              = var.cluster_topology
+  name_prefix                   = module.shared_labels.name_prefix
+  labels                        = module.shared_labels.labels
+  control_plane_instance_type   = var.aws_cluster.control_plane_instance_type
+  worker_instance_type          = var.aws_cluster.worker_instance_type
+  control_plane_root_volume_gbs = var.aws_cluster.control_plane_root_volume_gbs
+  worker_root_volume_gbs        = var.aws_cluster.worker_root_volume_gbs
+  worker_spot_enabled           = var.aws_cluster.worker_spot_enabled
+  storage_class                 = var.aws_cluster.storage_class
+  control_plane_endpoint_access = var.aws_cluster.control_plane_endpoint_access
+  control_plane_placement       = var.aws_cluster.control_plane_placement
+  worker_placement              = var.aws_cluster.worker_placement
+  control_plane_subnet_refs     = module.aws_network.control_plane_subnet_refs
+  worker_subnet_refs            = module.aws_network.worker_subnet_refs
+}
+
+module "oci_compute_nodes" {
+  source = "../../modules/oci_compute_nodes"
+
+  cluster_topology       = var.cluster_topology
+  name_prefix            = module.shared_labels.name_prefix
+  labels                 = module.shared_labels.labels
+  worker_shape           = var.oci_cluster.worker_shape
+  worker_ocpus           = var.oci_cluster.worker_ocpus
+  worker_memory_gbs      = var.oci_cluster.worker_memory_gbs
+  worker_boot_volume_gbs = var.oci_cluster.worker_boot_volume_gbs
+  workload_placement     = var.oci_cluster.workload_placement
+  worker_placement       = var.oci_cluster.worker_placement
+  storage_class          = var.oci_cluster.storage_class
+  worker_subnet_refs     = module.oci_network.worker_subnet_refs
+}
+
+module "aws_scheduler" {
+  source = "../../modules/aws_scheduler"
+
+  environment                    = local.environment
+  enabled                        = local.aws_dev_scheduler.enabled
+  target_scope                   = local.aws_dev_scheduler.target_scope
+  start_schedule                 = local.aws_dev_scheduler.start_schedule
+  stop_schedule                  = local.aws_dev_scheduler.stop_schedule
+  worker_node_group_names        = module.aws_compute_nodes.worker_node_group_names
+  control_plane_node_group_names = module.aws_compute_nodes.control_plane_node_group_names
+}
+
 output "release_name" {
   value = module.application.release_name
 }
 
 output "platform_contract_summary" {
   value = module.platform_contract.summary
+}
+
+output "cluster_foundations_summary" {
+  value = {
+    shared_labels = module.shared_labels.summary
+    aws_network   = module.aws_network.summary
+    aws_compute   = module.aws_compute_nodes.summary
+    oci_network   = module.oci_network.summary
+    oci_compute   = module.oci_compute_nodes.summary
+    aws_scheduler = module.aws_scheduler.summary
+  }
 }

@@ -35,6 +35,119 @@ The current sample values make that visible:
 - `load_balancer_provider = aws`
 - `default_node_group = aws_workers`
 
+## Terraform Foundation View
+
+The current Terraform work under issue `#13` now models the cross-cloud foundation more concretely than the earlier contract-only state.
+
+- Solid boxes below represent provider-backed Terraform resources that are declared today.
+- Dashed boxes represent sample-driven compute and scheduler intent that is validated and summarized by Terraform, but not yet materialized as cloud instance resources.
+- `dev` and `prod` use the same module graph; the example CIDRs shown below come from `infra/terraform/envs/dev/terraform.tfvars.example`, while `prod` keeps the same shape with `10.31.0.0/16` on AWS and `10.50.0.0/16` on OCI.
+
+```mermaid
+flowchart LR
+    cluster["\"Logical cluster intent
+    moadev-dev-multicloud
+    control_plane_provider = aws
+    aws_control_plane = 1
+    aws_workers = 3
+    oci_workers = 3\""]
+
+    subgraph AWS["AWS foundation (create mode, us-west-2)"]
+        aws_vpc["\"aws_vpc
+        10.30.0.0/16\""]
+        aws_igw["\"aws_internet_gateway
+        public ingress path\""]
+        aws_private_rt["\"aws_route_table
+        private\""]
+        aws_public_rt["\"aws_route_table
+        public\""]
+        aws_cp_a["\"control-plane subnet
+        10.30.10.0/24
+        us-west-2a\""]
+        aws_cp_b["\"control-plane subnet
+        10.30.11.0/24
+        us-west-2b\""]
+        aws_worker_a["\"worker subnet
+        10.30.20.0/24
+        us-west-2a\""]
+        aws_worker_b["\"worker subnet
+        10.30.21.0/24
+        us-west-2b\""]
+        aws_lb_a["\"public LB subnet
+        10.30.30.0/24
+        us-west-2a\""]
+        aws_lb_b["\"public LB subnet
+        10.30.31.0/24
+        us-west-2b\""]
+        aws_cp_vm["\"sample compute intent
+        t3.large
+        root 60 GiB
+        desired = 1\""]
+        aws_worker_vm["\"sample compute intent
+        t3.large
+        root 80 GiB
+        desired = 3\""]
+        aws_sched["\"dev scheduler intent
+        workers_only
+        start/stop TODO\""]
+
+        aws_vpc --> aws_igw
+        aws_vpc --> aws_private_rt
+        aws_vpc --> aws_public_rt
+        aws_vpc --> aws_cp_a
+        aws_vpc --> aws_cp_b
+        aws_vpc --> aws_worker_a
+        aws_vpc --> aws_worker_b
+        aws_vpc --> aws_lb_a
+        aws_vpc --> aws_lb_b
+        aws_private_rt --> aws_cp_a
+        aws_private_rt --> aws_cp_b
+        aws_private_rt --> aws_worker_a
+        aws_private_rt --> aws_worker_b
+        aws_public_rt --> aws_lb_a
+        aws_public_rt --> aws_lb_b
+        aws_cp_a -.-> aws_cp_vm
+        aws_cp_b -.-> aws_cp_vm
+        aws_worker_a -.-> aws_worker_vm
+        aws_worker_b -.-> aws_worker_vm
+        aws_sched -.-> aws_worker_vm
+    end
+
+    subgraph OCI["OCI foundation (create mode, ap-seoul-1)"]
+        oci_vcn["\"oci_core_vcn
+        10.40.0.0/16\""]
+        oci_rt["\"oci_core_route_table
+        worker private\""]
+        oci_worker_a["\"worker subnet
+        10.40.10.0/24
+        AD-1\""]
+        oci_worker_b["\"worker subnet
+        10.40.11.0/24
+        AD-2\""]
+        oci_worker_vm["\"sample compute intent
+        VM.Standard.E4.Flex
+        2 OCPU / 16 GiB
+        desired = 3\""]
+
+        oci_vcn --> oci_rt
+        oci_vcn --> oci_worker_a
+        oci_vcn --> oci_worker_b
+        oci_rt --> oci_worker_a
+        oci_rt --> oci_worker_b
+        oci_worker_a -.-> oci_worker_vm
+        oci_worker_b -.-> oci_worker_vm
+    end
+
+    cluster --> AWS
+    cluster --> OCI
+```
+
+Practical reading guide:
+
+- Terraform can now describe the AWS and OCI network envelopes as real provider resources when `network_mode = "create"`.
+- The same env roots still support `reference` mode, so operators can swap in existing VPC/VCN and subnet IDs later without changing the module graph.
+- Compute sizing, desired counts, storage classes, and dev scheduler behavior are already part of the typed Terraform input contract, but they are still scaffold-level intent rather than completed VM lifecycle resources.
+
 ## Environment vs Provider
 
 These terms solve different problems and should not be merged:
@@ -99,6 +212,7 @@ Provider-specific groups that stay provider-specific:
 ## Current Non-Goals
 
 - This document does not claim the live Terraform modules already implement the full topology.
+- This document does not claim the current Terraform modules already provision the VM instances represented by the sample compute intent boxes above.
 - This document does not lock final workload placement policy between AWS workers and OCI workers.
 - This document does not redefine the repository back to separate AWS and OCI clusters.
 
