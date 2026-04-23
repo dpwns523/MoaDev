@@ -82,3 +82,15 @@ variable "existing_public_load_balancer_subnet_ids" {
   type        = list(string)
   default     = []
 }
+
+variable "nat_gateway_enabled" {
+  description = "Whether create mode should provision NAT egress for private subnets."
+  type        = bool
+  default     = true
+}
+
+variable "nat_gateway_mode" {
+  description = "NAT egress topology for AWS private subnets."
+  type        = string
+  default     = "single"
+}

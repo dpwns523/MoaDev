@@ -162,23 +162,27 @@ variable "cost_automation" {
 variable "oci_cluster" {
   description = "OCI provider settings forwarded to the platform contract module and OCI skeleton modules."
   type = object({
-    region                 = string
-    tenancy_ocid           = string
-    compartment_ocid       = string
-    network_mode           = optional(string, "reference")
-    vcn_ocid               = optional(string)
-    vcn_cidr               = optional(string)
-    availability_domains   = optional(list(string), [])
-    worker_subnet_ocids    = optional(list(string), [])
-    worker_subnet_cidrs    = optional(list(string), [])
-    worker_shape           = string
-    worker_ocpus           = number
-    worker_memory_gbs      = number
-    worker_boot_volume_gbs = optional(number, 50)
-    workload_placement     = string
-    storage_class          = string
-    worker_placement       = optional(string, "private-subnets")
-    bastion_enabled        = optional(bool, false)
+    region                  = string
+    tenancy_ocid            = string
+    compartment_ocid        = string
+    network_mode            = optional(string, "reference")
+    vcn_ocid                = optional(string)
+    vcn_cidr                = optional(string)
+    availability_domains    = optional(list(string), [])
+    worker_subnet_ocids     = optional(list(string), [])
+    worker_subnet_cidrs     = optional(list(string), [])
+    worker_shape            = string
+    worker_ocpus            = number
+    worker_memory_gbs       = number
+    worker_boot_volume_gbs  = optional(number, 50)
+    workload_placement      = string
+    storage_class           = string
+    worker_placement        = optional(string, "private-subnets")
+    bastion_enabled         = optional(bool, false)
+    nat_gateway_enabled     = optional(bool, true)
+    image_ocid              = optional(string)
+    ssh_authorized_keys     = optional(string)
+    bootstrap_template_path = optional(string)
   })
   nullable = false
 
@@ -239,6 +243,12 @@ variable "aws_cluster" {
     control_plane_placement           = optional(string, "private-subnets")
     worker_placement                  = optional(string, "private-subnets")
     bastion_enabled                   = optional(bool, false)
+    nat_gateway_enabled               = optional(bool, true)
+    nat_gateway_mode                  = optional(string, "single")
+    ami_id                            = optional(string)
+    ssh_key_name                      = optional(string)
+    instance_profile_name             = optional(string)
+    bootstrap_template_path           = optional(string)
   })
   nullable = false
 

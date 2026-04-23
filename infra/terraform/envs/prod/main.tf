@@ -13,6 +13,14 @@ terraform {
   }
 }
 
+provider "aws" {
+  region = var.aws_cluster.region
+}
+
+provider "oci" {
+  region = var.oci_cluster.region
+}
+
 locals {
   # The directory chooses the environment so stage naming stays independent from provider selection.
   environment = "prod"
@@ -81,6 +89,8 @@ module "aws_network" {
   existing_control_plane_subnet_ids        = var.aws_cluster.control_plane_subnet_ids
   existing_worker_subnet_ids               = var.aws_cluster.worker_subnet_ids
   existing_public_load_balancer_subnet_ids = var.aws_cluster.public_load_balancer_subnet_ids
+  nat_gateway_enabled                      = var.aws_cluster.nat_gateway_enabled
+  nat_gateway_mode                         = var.aws_cluster.nat_gateway_mode
 }
 
 module "oci_network" {
@@ -98,6 +108,7 @@ module "oci_network" {
   worker_subnet_cidrs          = var.oci_cluster.worker_subnet_cidrs
   existing_vcn_ocid            = var.oci_cluster.vcn_ocid != null ? var.oci_cluster.vcn_ocid : ""
   existing_worker_subnet_ocids = var.oci_cluster.worker_subnet_ocids
+  nat_gateway_enabled          = var.oci_cluster.nat_gateway_enabled
 }
 
 module "aws_compute_nodes" {
@@ -117,22 +128,29 @@ module "aws_compute_nodes" {
   worker_placement              = var.aws_cluster.worker_placement
   control_plane_subnet_refs     = module.aws_network.control_plane_subnet_refs
   worker_subnet_refs            = module.aws_network.worker_subnet_refs
+  ami_id                        = var.aws_cluster.ami_id
+  ssh_key_name                  = var.aws_cluster.ssh_key_name
+  instance_profile_name         = var.aws_cluster.instance_profile_name
+  bootstrap_template_path       = var.aws_cluster.bootstrap_template_path
 }
 
 module "oci_compute_nodes" {
   source = "../../modules/oci_compute_nodes"
 
-  cluster_topology       = var.cluster_topology
-  name_prefix            = module.shared_labels.name_prefix
-  labels                 = module.shared_labels.labels
-  worker_shape           = var.oci_cluster.worker_shape
-  worker_ocpus           = var.oci_cluster.worker_ocpus
-  worker_memory_gbs      = var.oci_cluster.worker_memory_gbs
-  worker_boot_volume_gbs = var.oci_cluster.worker_boot_volume_gbs
-  workload_placement     = var.oci_cluster.workload_placement
-  worker_placement       = var.oci_cluster.worker_placement
-  storage_class          = var.oci_cluster.storage_class
-  worker_subnet_refs     = module.oci_network.worker_subnet_refs
+  cluster_topology        = var.cluster_topology
+  name_prefix             = module.shared_labels.name_prefix
+  labels                  = module.shared_labels.labels
+  worker_shape            = var.oci_cluster.worker_shape
+  worker_ocpus            = var.oci_cluster.worker_ocpus
+  worker_memory_gbs       = var.oci_cluster.worker_memory_gbs
+  worker_boot_volume_gbs  = var.oci_cluster.worker_boot_volume_gbs
+  workload_placement      = var.oci_cluster.workload_placement
+  worker_placement        = var.oci_cluster.worker_placement
+  storage_class           = var.oci_cluster.storage_class
+  worker_subnet_refs      = module.oci_network.worker_subnet_refs
+  image_ocid              = var.oci_cluster.image_ocid
+  ssh_authorized_keys     = var.oci_cluster.ssh_authorized_keys
+  bootstrap_template_path = var.oci_cluster.bootstrap_template_path
 }
 
 module "aws_scheduler" {

@@ -63,3 +63,9 @@ variable "existing_worker_subnet_ocids" {
   type        = list(string)
   default     = []
 }
+
+variable "nat_gateway_enabled" {
+  description = "Whether create mode should provision NAT egress for OCI private subnets."
+  type        = bool
+  default     = true
+}

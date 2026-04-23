@@ -82,3 +82,31 @@ variable "worker_subnet_refs" {
   description = "Worker subnet references for AWS node groups."
   type        = list(string)
 }
+
+variable "ami_id" {
+  description = "AMI used for AWS VM nodes."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "ssh_key_name" {
+  description = "SSH key pair name attached to AWS VM nodes."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "instance_profile_name" {
+  description = "IAM instance profile name attached to AWS VM nodes."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "bootstrap_template_path" {
+  description = "Path to the cloud-init or user-data template for AWS VM nodes."
+  type        = string
+  default     = null
+  nullable    = true
+}

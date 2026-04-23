@@ -67,3 +67,24 @@ variable "worker_subnet_refs" {
   description = "Worker subnet references for OCI node groups."
   type        = list(string)
 }
+
+variable "image_ocid" {
+  description = "OCI image OCID used for worker VM nodes."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "ssh_authorized_keys" {
+  description = "SSH public keys injected into OCI VM nodes."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "bootstrap_template_path" {
+  description = "Path to the cloud-init or user-data template for OCI VM nodes."
+  type        = string
+  default     = null
+  nullable    = true
+}
