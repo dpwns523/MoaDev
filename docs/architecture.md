@@ -118,8 +118,32 @@ These documents intentionally follow the checked-in sample configs on `main`, wh
 - `control_plane_provider = aws`
 - `aws_control_plane`, `aws_workers`, and `oci_workers` node groups
 - provider-specific overrides kept under `aws_cluster` and `oci_cluster`
+- provider-backed Terraform foundations for AWS VPC/subnet/NAT routing, OCI VCN/worker-subnet/NAT routing, and AWS/OCI VM node resources when the env roots run in `create` mode
 
 Use the dedicated topology docs when reviewing infrastructure boundaries, runtime shape, or how Terraform, Ansible, Kubespray, Helm, and Argo CD hand off responsibility to each other.
+
+## Terraform Foundations
+
+The current `infra/terraform` direction now has two layers instead of one:
+
+1. A typed cross-cloud contract that validates shared topology and provider-specific overrides.
+2. Infrastructure foundation modules that can either create or reference AWS and OCI network primitives while materializing provider-backed VM node resources from the same Terraform contract.
+
+Current Terraform ownership in this repository is:
+
+- AWS foundation: VPC, control-plane subnets, worker subnets, public load-balancer subnets, internet gateway, NAT gateway, route-table wiring, and self-managed control-plane/worker VM instances
+- OCI foundation: VCN, worker route table, NAT gateway, worker subnets, and worker VM instances
+- Shared cross-cloud contract: labels, naming prefixes, node-group intent, storage classes, and dev scheduler settings
+
+Current Terraform non-goals in this repository are:
+
+- managed Kubernetes resources
+- Helm release boundaries
+- Kubespray inventory ownership
+- Ansible day-2 operations ownership
+- turning the provisioned VM foundations into a joined Kubernetes cluster
+
+See `docs/platform-topology.md` for the example-driven Terraform foundation diagram that matches the checked-in `terraform.tfvars.example` files.
 
 ## Engineering Boundaries
 

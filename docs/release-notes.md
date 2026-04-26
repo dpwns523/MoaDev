@@ -140,6 +140,51 @@ Reframed the repository from a generic developer feed direction to an authentica
 
 ---
 
+## Release: `terraform-vm-cluster-foundations`
+
+- Date: `2026-04-21`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Expanded Terraform from a contract-only baseline into AWS and OCI VM-cluster foundations with reusable shared-label, networking, provider-backed VM node resources, optional dev-scheduler intent, and an example-driven topology diagram.
+
+### User Impact
+
+- Who is affected: contributors and operators working on Terraform platform scaffolding
+- What users will notice: `infra/terraform/envs/dev` and `infra/terraform/envs/prod` now wire shared labels, AWS/OCI foundation modules, private-subnet NAT egress, provider-backed VM node resources, and example tfvars that describe create/reference network modes plus bootstrap-template paths
+- Expected benefits: clearer reviewable Terraform scope for issue `#13`, less ambiguity around what AWS and OCI foundations are meant to look like, and a more honest handoff point into Kubespray and host bootstrap follow-up work
+
+### Migration Notes
+
+- Required upgrade steps: rerun `terraform init -backend=false` in each Terraform environment root so the provider lock files match the checked-in constraints
+- Data or config changes: AWS and OCI example tfvars now include explicit network mode, CIDR, subnet layout, NAT toggles, image or AMI identifiers, and bootstrap-template paths
+- Operator actions: refresh any local `terraform.tfvars` copies from the updated examples before validating or planning Terraform changes, then replace the sample AMI, image, and key values outside version control before any real apply
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- Terraform environment roots now expect the expanded `shared_labels`, `aws_cluster`, `oci_cluster`, and optional `aws_dev_scheduler` contract fields used by the foundation modules.
+
+### Rollback Notes
+
+- Rollback trigger: the new network or provider scaffolding blocks Terraform validation in the current contributor environment
+- Rollback steps: remove the foundation module wiring, revert the provider version pins and env-root contract additions, and fall back to the earlier contract-only Terraform state
+- Data recovery notes: none
+
+### Known Issues
+
+- The current Terraform modules stop at VM foundations and bootstrap placeholders; actual cluster join, Kubespray inventory, and host-level day-2 configuration still belong to follow-up work.
+- Local validation currently depends on provider versions that remain compatible with the contributor's installed Terraform CLI.
+
+---
+
 ## Release: `terraform-platform-contracts`
 
 - Date: `2026-04-15`

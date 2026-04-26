@@ -16,6 +16,10 @@ output "summary" {
       aws = var.aws_cluster.region
       oci = var.oci_cluster.region
     }
+    network_modes = {
+      aws = var.aws_cluster.network_mode
+      oci = var.oci_cluster.network_mode
+    }
     provider_placement = {
       aws = {
         control_plane_endpoint_access = var.aws_cluster.control_plane_endpoint_access
@@ -24,8 +28,9 @@ output "summary" {
         bastion_enabled               = var.aws_cluster.bastion_enabled
       }
       oci = {
-        worker_placement = var.oci_cluster.worker_placement
-        bastion_enabled  = var.oci_cluster.bastion_enabled
+        availability_domains = var.oci_cluster.availability_domains
+        worker_placement     = var.oci_cluster.worker_placement
+        bastion_enabled      = var.oci_cluster.bastion_enabled
       }
     }
   }
