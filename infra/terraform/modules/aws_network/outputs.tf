@@ -33,6 +33,8 @@ output "summary" {
     worker_subnet_refs                 = local.worker_subnet_refs
     public_load_balancer_subnet_layout = local.public_load_balancer_subnet_plan
     public_load_balancer_subnet_refs   = local.public_load_balancer_subnet_refs
+    nat_gateway_enabled                = local.nat_gateway_enabled
+    private_egress_mode                = local.private_egress_mode
     labels                             = var.labels
   }
 }

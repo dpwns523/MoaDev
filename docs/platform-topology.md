@@ -40,7 +40,7 @@ The current sample values make that visible:
 The current Terraform work under issue `#13` now models the cross-cloud foundation more concretely than the earlier contract-only state.
 
 - Solid boxes below represent provider-backed Terraform resources that are declared today.
-- Dashed boxes represent sample-driven compute and scheduler intent that is validated and summarized by Terraform, but not yet materialized as cloud instance resources.
+- Dashed boxes represent validated Terraform intent that still stops short of a live cloud resource. In the current graph, that is only the optional dev scheduler.
 - `dev` and `prod` use the same module graph; the example CIDRs shown below come from `infra/terraform/envs/dev/terraform.tfvars.example`, while `prod` keeps the same shape with `10.31.0.0/16` on AWS and `10.50.0.0/16` on OCI.
 
 ```mermaid
@@ -57,6 +57,8 @@ flowchart LR
         10.30.0.0/16\""]
         aws_igw["\"aws_internet_gateway
         public ingress path\""]
+        aws_nat["\"aws_nat_gateway
+        private egress\""]
         aws_private_rt["\"aws_route_table
         private\""]
         aws_public_rt["\"aws_route_table
@@ -79,11 +81,13 @@ flowchart LR
         aws_lb_b["\"public LB subnet
         10.30.31.0/24
         us-west-2b\""]
-        aws_cp_vm["\"sample compute intent
+        aws_cp_vm["\"aws_instance
+        control-plane nodes
         t3.large
         root 60 GiB
         desired = 1\""]
-        aws_worker_vm["\"sample compute intent
+        aws_worker_vm["\"aws_instance
+        worker nodes
         t3.large
         root 80 GiB
         desired = 3\""]
@@ -92,6 +96,7 @@ flowchart LR
         start/stop TODO\""]
 
         aws_vpc --> aws_igw
+        aws_vpc --> aws_nat
         aws_vpc --> aws_private_rt
         aws_vpc --> aws_public_rt
         aws_vpc --> aws_cp_a
@@ -106,16 +111,19 @@ flowchart LR
         aws_private_rt --> aws_worker_b
         aws_public_rt --> aws_lb_a
         aws_public_rt --> aws_lb_b
-        aws_cp_a -.-> aws_cp_vm
-        aws_cp_b -.-> aws_cp_vm
-        aws_worker_a -.-> aws_worker_vm
-        aws_worker_b -.-> aws_worker_vm
+        aws_nat --> aws_private_rt
+        aws_cp_a --> aws_cp_vm
+        aws_cp_b --> aws_cp_vm
+        aws_worker_a --> aws_worker_vm
+        aws_worker_b --> aws_worker_vm
         aws_sched -.-> aws_worker_vm
     end
 
     subgraph OCI["OCI foundation (create mode, ap-seoul-1)"]
         oci_vcn["\"oci_core_vcn
         10.40.0.0/16\""]
+        oci_nat["\"oci_core_nat_gateway
+        private egress\""]
         oci_rt["\"oci_core_route_table
         worker private\""]
         oci_worker_a["\"worker subnet
@@ -124,18 +132,21 @@ flowchart LR
         oci_worker_b["\"worker subnet
         10.40.11.0/24
         AD-2\""]
-        oci_worker_vm["\"sample compute intent
+        oci_worker_vm["\"oci_core_instance
+        worker nodes
         VM.Standard.E4.Flex
         2 OCPU / 16 GiB
         desired = 3\""]
 
         oci_vcn --> oci_rt
+        oci_vcn --> oci_nat
         oci_vcn --> oci_worker_a
         oci_vcn --> oci_worker_b
+        oci_nat --> oci_rt
         oci_rt --> oci_worker_a
         oci_rt --> oci_worker_b
-        oci_worker_a -.-> oci_worker_vm
-        oci_worker_b -.-> oci_worker_vm
+        oci_worker_a --> oci_worker_vm
+        oci_worker_b --> oci_worker_vm
     end
 
     cluster --> AWS
@@ -144,9 +155,9 @@ flowchart LR
 
 Practical reading guide:
 
-- Terraform can now describe the AWS and OCI network envelopes as real provider resources when `network_mode = "create"`.
+- Terraform can now describe the AWS and OCI network envelopes, NAT egress, and VM node resources as real provider resources when `network_mode = "create"`.
 - The same env roots still support `reference` mode, so operators can swap in existing VPC/VCN and subnet IDs later without changing the module graph.
-- Compute sizing, desired counts, storage classes, and dev scheduler behavior are already part of the typed Terraform input contract, but they are still scaffold-level intent rather than completed VM lifecycle resources.
+- Compute sizing, desired counts, storage classes, and bootstrap template paths remain part of the typed Terraform input contract, while the optional dev scheduler stays as validated intent only.
 
 ## Environment vs Provider
 
@@ -212,7 +223,7 @@ Provider-specific groups that stay provider-specific:
 ## Current Non-Goals
 
 - This document does not claim the live Terraform modules already implement the full topology.
-- This document does not claim the current Terraform modules already provision the VM instances represented by the sample compute intent boxes above.
+- This document does not claim the current Terraform modules already turn the provisioned AWS and OCI nodes into a joined Kubernetes cluster.
 - This document does not lock final workload placement policy between AWS workers and OCI workers.
 - This document does not redefine the repository back to separate AWS and OCI clusters.
 

@@ -10,6 +10,7 @@ terraform {
 locals {
   create_mode      = var.network_mode == "create"
   planned_vpc_name = format("%s-aws-vpc", var.name_prefix)
+  nat_gateway_mode = trimspace(var.nat_gateway_mode) == "" ? "single" : var.nat_gateway_mode
 
   control_plane_subnet_plan = local.create_mode ? [
     for index, cidr in var.control_plane_subnet_cidrs : {
@@ -72,6 +73,17 @@ locals {
     for name in sort(keys(aws_subnet.public_load_balancer)) :
     aws_subnet.public_load_balancer[name].id
   ] : var.existing_public_load_balancer_subnet_ids
+
+  nat_gateway_enabled = local.create_mode && var.nat_gateway_enabled
+  private_egress_mode = (
+    local.create_mode
+    ? (
+      local.nat_gateway_enabled
+      ? format("nat-gateway-%s", local.nat_gateway_mode)
+      : "none"
+    )
+    : "reference"
+  )
 }
 
 resource "aws_vpc" "this" {
@@ -94,6 +106,29 @@ resource "aws_internet_gateway" "public" {
   tags = merge(var.labels, {
     Name = format("%s-aws-igw", var.name_prefix)
   })
+}
+
+resource "aws_eip" "nat" {
+  count = local.nat_gateway_enabled ? 1 : 0
+
+  domain = "vpc"
+
+  tags = merge(var.labels, {
+    Name = format("%s-aws-nat-eip", var.name_prefix)
+  })
+}
+
+resource "aws_nat_gateway" "private" {
+  count = local.nat_gateway_enabled ? 1 : 0
+
+  allocation_id = aws_eip.nat[0].id
+  subnet_id     = local.public_load_balancer_subnet_refs[0]
+
+  tags = merge(var.labels, {
+    Name = format("%s-aws-nat", var.name_prefix)
+  })
+
+  depends_on = [aws_internet_gateway.public]
 }
 
 resource "aws_subnet" "control_plane" {
@@ -149,6 +184,14 @@ resource "aws_route_table" "private" {
   })
 }
 
+resource "aws_route" "private_default_egress" {
+  count = local.nat_gateway_enabled ? 1 : 0
+
+  route_table_id         = aws_route_table.private[0].id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.private[0].id
+}
+
 resource "aws_route_table" "public" {
   count = local.create_mode ? 1 : 0
 
@@ -189,6 +232,16 @@ check "supported_network_mode" {
   assert {
     condition     = contains(["create", "reference"], var.network_mode)
     error_message = "network_mode must be either create or reference."
+  }
+}
+
+check "supported_nat_gateway_mode" {
+  assert {
+    condition = (
+      !local.nat_gateway_enabled ||
+      contains(["single"], local.nat_gateway_mode)
+    )
+    error_message = "nat_gateway_mode must currently be set to single when AWS NAT egress is enabled."
   }
 }
 

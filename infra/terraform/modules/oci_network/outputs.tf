@@ -19,6 +19,7 @@ output "summary" {
     availability_domains = var.availability_domains
     worker_subnet_layout = local.worker_subnet_plan
     worker_subnet_refs   = local.worker_subnet_refs
+    private_egress_mode  = local.nat_gateway_mode
     labels               = var.labels
   }
 }

@@ -18,6 +18,11 @@ variable "cluster_topology" {
   })
 }
 
+variable "compartment_ocid" {
+  description = "OCI compartment OCID used for worker VM foundations."
+  type        = string
+}
+
 variable "name_prefix" {
   description = "Generated name prefix for OCI compute resources."
   type        = string
@@ -65,6 +70,11 @@ variable "storage_class" {
 
 variable "worker_subnet_refs" {
   description = "Worker subnet references for OCI node groups."
+  type        = list(string)
+}
+
+variable "availability_domains" {
+  description = "Availability domains used to spread OCI worker instances."
   type        = list(string)
 }
 

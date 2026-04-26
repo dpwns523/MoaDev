@@ -1,0 +1,16 @@
+#cloud-config
+write_files:
+  - path: /etc/moadev/node-profile.env
+    permissions: "0644"
+    content: |
+      MOADEV_CLUSTER_NAME=${cluster_name}
+      MOADEV_KUBERNETES_VERSION=${kubernetes_version}
+      MOADEV_CLOUD_PROVIDER=${cloud_provider}
+      MOADEV_NODE_GROUP=${node_group_name}
+      MOADEV_NODE_ROLE=${node_role}
+      MOADEV_INSTANCE_NAME=${instance_name}
+      MOADEV_STORAGE_CLASS=${storage_class}
+      MOADEV_WORKLOAD_PLACEMENT=${workload_placement}
+      MOADEV_NETWORK_PLACEMENT=${placement}
+runcmd:
+  - [ bash, -lc, "echo 'TODO: replace placeholder bootstrap with Kubespray or host bootstrap workflow' >/etc/motd" ]

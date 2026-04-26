@@ -148,19 +148,19 @@ Reframed the repository from a generic developer feed direction to an authentica
 
 ### Summary
 
-Expanded Terraform from a contract-only baseline into AWS and OCI VM-cluster foundation scaffolding with reusable shared-label, networking, compute-intent, and dev-scheduler modules plus an example-driven topology diagram.
+Expanded Terraform from a contract-only baseline into AWS and OCI VM-cluster foundations with reusable shared-label, networking, provider-backed VM node resources, optional dev-scheduler intent, and an example-driven topology diagram.
 
 ### User Impact
 
 - Who is affected: contributors and operators working on Terraform platform scaffolding
-- What users will notice: `infra/terraform/envs/dev` and `infra/terraform/envs/prod` now wire shared labels, AWS/OCI foundation modules, provider version pins, and example tfvars that describe create/reference network modes
-- Expected benefits: clearer reviewable Terraform scope for issue `#13`, less ambiguity around what AWS and OCI foundations are meant to look like, and better alignment between sample values and checked-in docs
+- What users will notice: `infra/terraform/envs/dev` and `infra/terraform/envs/prod` now wire shared labels, AWS/OCI foundation modules, private-subnet NAT egress, provider-backed VM node resources, and example tfvars that describe create/reference network modes plus bootstrap-template paths
+- Expected benefits: clearer reviewable Terraform scope for issue `#13`, less ambiguity around what AWS and OCI foundations are meant to look like, and a more honest handoff point into Kubespray and host bootstrap follow-up work
 
 ### Migration Notes
 
 - Required upgrade steps: rerun `terraform init -backend=false` in each Terraform environment root so the provider lock files match the checked-in constraints
-- Data or config changes: AWS and OCI example tfvars now include explicit network mode, CIDR, subnet layout, and root-volume settings
-- Operator actions: refresh any local `terraform.tfvars` copies from the updated examples before validating or planning Terraform changes
+- Data or config changes: AWS and OCI example tfvars now include explicit network mode, CIDR, subnet layout, NAT toggles, image or AMI identifiers, and bootstrap-template paths
+- Operator actions: refresh any local `terraform.tfvars` copies from the updated examples before validating or planning Terraform changes, then replace the sample AMI, image, and key values outside version control before any real apply
 
 ### New Env Vars
 
@@ -180,7 +180,7 @@ Expanded Terraform from a contract-only baseline into AWS and OCI VM-cluster fou
 
 ### Known Issues
 
-- The current Terraform modules create or reference network foundations, but AWS and OCI VM instance resources are still scaffold-level follow-up work inside the same issue track.
+- The current Terraform modules stop at VM foundations and bootstrap placeholders; actual cluster join, Kubespray inventory, and host-level day-2 configuration still belong to follow-up work.
 - Local validation currently depends on provider versions that remain compatible with the contributor's installed Terraform CLI.
 
 ---

@@ -10,6 +10,7 @@ terraform {
 locals {
   create_mode      = var.network_mode == "create"
   planned_vcn_name = format("%s-oci-vcn", var.name_prefix)
+  nat_gateway_mode = local.create_mode && var.nat_gateway_enabled ? "nat-gateway-single" : (local.create_mode ? "none" : "reference")
 
   worker_subnet_plan = local.create_mode ? [
     for index, cidr in var.worker_subnet_cidrs : {
@@ -43,6 +44,15 @@ resource "oci_core_vcn" "this" {
   freeform_tags  = var.labels
 }
 
+resource "oci_core_nat_gateway" "worker" {
+  count = local.create_mode && var.nat_gateway_enabled ? 1 : 0
+
+  compartment_id = var.compartment_ocid
+  vcn_id         = oci_core_vcn.this[0].id
+  display_name   = format("%s-oci-worker-nat", var.name_prefix)
+  freeform_tags  = var.labels
+}
+
 resource "oci_core_route_table" "worker_private" {
   count = local.create_mode ? 1 : 0
 
@@ -50,6 +60,16 @@ resource "oci_core_route_table" "worker_private" {
   vcn_id         = oci_core_vcn.this[0].id
   display_name   = format("%s-oci-worker-private-rt", var.name_prefix)
   freeform_tags  = var.labels
+
+  dynamic "route_rules" {
+    for_each = local.create_mode && var.nat_gateway_enabled ? [1] : []
+
+    content {
+      destination       = "0.0.0.0/0"
+      destination_type  = "CIDR_BLOCK"
+      network_entity_id = oci_core_nat_gateway.worker[0].id
+    }
+  }
 }
 
 resource "oci_core_subnet" "worker" {

@@ -145,7 +145,7 @@ oci_cluster = {
   nat_gateway_enabled    = true
   image_ocid             = "ocid1.image.oc1.ap-osaka-1.exampleuniqueid"
   ssh_authorized_keys    = "ssh-ed25519 AAAA...REPLACE_ME_PROD_PUBLIC_KEY"
-  bootstrap_template_path = "templates/oci-node-init.sh.tftpl"
+  bootstrap_template_path = "../../templates/oci-node-init.sh.tftpl"
 }
 
 aws_cluster = {
@@ -172,5 +172,5 @@ aws_cluster = {
   ami_id                            = "ami-0123456789example0"
   ssh_key_name                      = "REPLACE_ME_PROD_AWS_KEY"
   instance_profile_name             = "REPLACE_ME_PROD_AWS_NODE_PROFILE"
-  bootstrap_template_path           = "templates/aws-node-init.sh.tftpl"
+  bootstrap_template_path           = "../../templates/aws-node-init.sh.tftpl"
 }
