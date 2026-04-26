@@ -104,6 +104,16 @@ This bridge is an MVP contract for issue `#41`. It keeps the API independent fro
 - `403` is reserved for future authorization rules where the caller is authenticated but does not have permission for a specific operation.
 - `503` means the API auth bridge itself is misconfigured, such as a missing shared secret.
 
+## Authenticated Article Query APIs
+
+Issue `#44` extends the protected FastAPI surface from the original feed scaffold to the first article-centric MVP read APIs.
+
+- `GET /api/v1/categories` returns authenticated browsing categories plus article counts.
+- `GET /api/v1/articles` returns authenticated article lists with source and category references, and supports `category` and `source` filtering.
+- `GET /api/v1/articles/{article_id}` returns the persisted article detail contract, including normalized segments, structured output, and explicit processing state.
+- `GET /api/v1/articles/{article_id}/processing-status` exposes incomplete enrichment state without forcing clients to infer it from missing fields.
+- `app/api/dependencies/db.py` now resolves per-request database sessions for the article read model, while `app/domain/articles/service.py` keeps the SQLAlchemy-backed query logic out of the route handlers.
+
 ## Platform Topology
 
 The current platform source of truth is documented in:
@@ -134,13 +144,16 @@ The current `services/api` layout is still intentionally small, but it now has c
 
 - `app/main.py` owns app bootstrap and shared exception-envelope translation.
 - `app/api/` owns router composition and versioned endpoint registration.
-- `app/api/dependencies/auth.py` owns the authenticated request dependency for protected API routes.
+- `app/api/dependencies/` owns the authenticated request dependency plus database-session resolution for protected article query routes.
+- `app/api/v1/endpoints/` now owns feed, category, article-detail, and processing-status HTTP endpoints.
 - `app/core/config.py` owns auth- and persistence-related environment configuration.
 - `app/core/db.py` owns reusable database engine and session-factory setup.
 - `app/core/security.py` owns bearer token signing and verification.
 - `app/domain/articles/models.py` owns the first shared persistence model for sources, articles, segments, structured outputs, and processing status.
+- `app/domain/articles/service.py` owns database-backed article and category query logic on top of the persisted model.
+- `app/schemas/article.py` owns the article/category/detail/processing-status response contracts.
 - `app/services/feed_catalog.py` owns the first domain service and domain-level validation.
-- `tests/` covers endpoint behavior, the feed domain boundary, the auth boundary, and article persistence constraints.
+- `tests/` covers endpoint behavior, the feed domain boundary, the auth boundary, article persistence constraints, and authenticated article query contracts.
 
 Compared with the referenced FastAPI examples:
 
@@ -171,6 +184,7 @@ services/api/
     api/
       dependencies/
         auth.py
+        db.py
       router.py
       endpoints/
         health.py
@@ -178,6 +192,8 @@ services/api/
         router.py
         endpoints/
           feeds.py
+          categories.py
+          articles.py
     core/
       config.py
       db.py
@@ -185,10 +201,14 @@ services/api/
     domain/
       articles/
         models.py
+        service.py
+    schemas/
+      article.py
     services/
       feed_catalog.py
   tests/
     test_article_persistence.py
+    test_articles_api.py
     auth_token_helpers.py
     test_main.py
     test_feed_catalog.py

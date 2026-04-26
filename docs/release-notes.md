@@ -6,6 +6,51 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `authenticated-article-query-apis`
+
+- Date: `2026-04-22`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Added authenticated category, article-list, article-detail, and processing-status APIs for the MVP knowledge workflow on top of the shared auth and article-persistence baselines.
+
+### User Impact
+
+- Who is affected: authenticated product users browsing processed knowledge content, contributors extending the API surface, and operators wiring database-backed API deployments
+- What users will notice: authenticated callers can now browse categories, filter articles by source and category, open article detail payloads, and inspect explicit processing status when enrichment is incomplete
+- Expected benefits: the FastAPI surface now matches the article-centric MVP plan, article reads no longer depend on placeholder-only feed scaffolding, and web work can integrate against stable protected contracts
+
+### Migration Notes
+
+- Required upgrade steps: configure both `MOADEV_INTERNAL_AUTH_SECRET` and `DATABASE_URL`, then run the updated `services/api` stack against the article persistence baseline from issue `#42`
+- Data or config changes: `services/api` now serves protected category and article query endpoints backed by the shared relational article model
+- Operator actions: bootstrap the database schema before enabling these endpoints, and monitor `401`, `404`, and `503` responses as the first operational signals for auth, missing records, and database misconfiguration
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced beyond the auth and persistence baselines from issues `#41` and `#42`. |
+
+### Breaking Changes
+
+- None. This release adds new authenticated read endpoints without changing the existing internal auth-token contract.
+
+### Rollback Notes
+
+- Rollback trigger: the article query contract proves unstable for the first web integration or the persistence-backed read path needs redesign before broader rollout
+- Rollback steps: revert the category and article endpoints, their schemas, and the article query service together so the repository returns to the feed-only protected API surface from issue `#41`
+- Data recovery notes: no data migration rollback is required because this slice reads from the existing article persistence baseline instead of mutating the schema
+
+### Known Issues
+
+- The current list surface supports source and category filtering only; search, pagination, and richer browse metadata still belong to later work.
+- The MVP article query path lives in `services/api`; equivalent authenticated web rendering and UX integration still belong to follow-up tasks.
+
+---
+
 ## Release: `article-persistence-baseline`
 
 - Date: `2026-04-21`
