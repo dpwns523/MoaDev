@@ -22,15 +22,29 @@ output "summary" {
     }
     provider_placement = {
       aws = {
-        control_plane_endpoint_access = var.aws_cluster.control_plane_endpoint_access
-        control_plane_placement       = var.aws_cluster.control_plane_placement
-        worker_placement              = var.aws_cluster.worker_placement
-        bastion_enabled               = var.aws_cluster.bastion_enabled
+        control_plane_endpoint_access_intent = var.aws_cluster.control_plane_endpoint_access_intent
+        control_plane_placement_intent       = var.aws_cluster.control_plane_placement_intent
+        worker_placement_intent              = var.aws_cluster.worker_placement_intent
+        bastion_enabled                      = var.aws_cluster.bastion_enabled
       }
       oci = {
-        availability_domains = var.oci_cluster.availability_domains
-        worker_placement     = var.oci_cluster.worker_placement
-        bastion_enabled      = var.oci_cluster.bastion_enabled
+        availability_domains      = var.oci_cluster.availability_domains
+        workload_placement_intent = var.oci_cluster.workload_placement_intent
+        worker_placement_intent   = var.oci_cluster.worker_placement_intent
+        bastion_enabled           = var.oci_cluster.bastion_enabled
+      }
+    }
+    provider_security = {
+      aws = {
+        security_profile       = var.aws_cluster.security_profile
+        ssh_access_mode        = var.aws_cluster.ssh_access_mode
+        kube_api_access_mode   = var.aws_cluster.kube_api_access_mode
+        cluster_internal_cidrs = var.aws_cluster.cluster_internal_cidrs
+      }
+      oci = {
+        security_profile       = var.oci_cluster.security_profile
+        ssh_access_mode        = var.oci_cluster.ssh_access_mode
+        cluster_internal_cidrs = var.oci_cluster.cluster_internal_cidrs
       }
     }
   }

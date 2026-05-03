@@ -135,6 +135,11 @@ Current Terraform ownership in this repository is:
 - OCI foundation: VCN, worker route table, NAT gateway, worker subnets, and worker VM instances
 - Shared cross-cloud contract: labels, naming prefixes, node-group intent, storage classes, and dev scheduler settings
 
+The current VM foundation contract also makes two operational assumptions explicit:
+
+- AWS and OCI node access is mediated by Terraform-managed security boundaries instead of provider default security rules.
+- OCI worker subnet references are modeled as `(subnet_id, availability_domain)` bindings so reference-mode instance placement stays valid.
+
 Current Terraform non-goals in this repository are:
 
 - managed Kubernetes resources

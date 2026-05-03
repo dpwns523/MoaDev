@@ -10,7 +10,7 @@ write_files:
       MOADEV_NODE_ROLE=${node_role}
       MOADEV_INSTANCE_NAME=${instance_name}
       MOADEV_STORAGE_CLASS=${storage_class}
-      MOADEV_WORKLOAD_PLACEMENT=${workload_placement}
-      MOADEV_NETWORK_PLACEMENT=${placement}
+      MOADEV_WORKLOAD_PLACEMENT_INTENT=${workload_placement_intent}
+      MOADEV_NETWORK_PLACEMENT_INTENT=${placement_intent}
 runcmd:
   - [ bash, -lc, "echo 'TODO: replace placeholder bootstrap with Kubespray or host bootstrap workflow' >/etc/motd" ]

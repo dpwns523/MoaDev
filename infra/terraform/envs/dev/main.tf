@@ -91,46 +91,58 @@ module "aws_network" {
   existing_public_load_balancer_subnet_ids = var.aws_cluster.public_load_balancer_subnet_ids
   nat_gateway_enabled                      = var.aws_cluster.nat_gateway_enabled
   nat_gateway_mode                         = var.aws_cluster.nat_gateway_mode
+  security_profile                         = var.aws_cluster.security_profile
+  ssh_access_mode                          = var.aws_cluster.ssh_access_mode
+  admin_ingress_cidrs                      = var.aws_cluster.admin_ingress_cidrs
+  kube_api_access_mode                     = var.aws_cluster.kube_api_access_mode
+  kube_api_ingress_cidrs                   = var.aws_cluster.kube_api_ingress_cidrs
+  cluster_internal_cidrs                   = var.aws_cluster.cluster_internal_cidrs
 }
 
 module "oci_network" {
   source = "../../modules/oci_network"
 
-  environment                  = local.environment
-  cluster_name                 = var.cluster_topology.cluster_name
-  region                       = var.oci_cluster.region
-  compartment_ocid             = var.oci_cluster.compartment_ocid
-  network_mode                 = var.oci_cluster.network_mode
-  name_prefix                  = module.shared_labels.name_prefix
-  labels                       = module.shared_labels.labels
-  vcn_cidr                     = var.oci_cluster.vcn_cidr
-  availability_domains         = var.oci_cluster.availability_domains
-  worker_subnet_cidrs          = var.oci_cluster.worker_subnet_cidrs
-  existing_vcn_ocid            = var.oci_cluster.vcn_ocid != null ? var.oci_cluster.vcn_ocid : ""
-  existing_worker_subnet_ocids = var.oci_cluster.worker_subnet_ocids
-  nat_gateway_enabled          = var.oci_cluster.nat_gateway_enabled
+  environment                     = local.environment
+  cluster_name                    = var.cluster_topology.cluster_name
+  region                          = var.oci_cluster.region
+  compartment_ocid                = var.oci_cluster.compartment_ocid
+  network_mode                    = var.oci_cluster.network_mode
+  name_prefix                     = module.shared_labels.name_prefix
+  labels                          = module.shared_labels.labels
+  vcn_cidr                        = var.oci_cluster.vcn_cidr
+  availability_domains            = var.oci_cluster.availability_domains
+  worker_subnet_cidrs             = var.oci_cluster.worker_subnet_cidrs
+  existing_vcn_ocid               = var.oci_cluster.vcn_ocid != null ? var.oci_cluster.vcn_ocid : ""
+  existing_worker_subnet_bindings = var.oci_cluster.existing_worker_subnet_bindings
+  nat_gateway_enabled             = var.oci_cluster.nat_gateway_enabled
+  security_profile                = var.oci_cluster.security_profile
+  ssh_access_mode                 = var.oci_cluster.ssh_access_mode
+  admin_ingress_cidrs             = var.oci_cluster.admin_ingress_cidrs
+  cluster_internal_cidrs          = var.oci_cluster.cluster_internal_cidrs
 }
 
 module "aws_compute_nodes" {
   source = "../../modules/aws_compute_nodes"
 
-  cluster_topology              = var.cluster_topology
-  name_prefix                   = module.shared_labels.name_prefix
-  labels                        = module.shared_labels.labels
-  control_plane_instance_type   = var.aws_cluster.control_plane_instance_type
-  worker_instance_type          = var.aws_cluster.worker_instance_type
-  control_plane_root_volume_gbs = var.aws_cluster.control_plane_root_volume_gbs
-  worker_root_volume_gbs        = var.aws_cluster.worker_root_volume_gbs
-  worker_spot_enabled           = var.aws_cluster.worker_spot_enabled
-  storage_class                 = var.aws_cluster.storage_class
-  control_plane_endpoint_access = var.aws_cluster.control_plane_endpoint_access
-  control_plane_placement       = var.aws_cluster.control_plane_placement
-  worker_placement              = var.aws_cluster.worker_placement
-  control_plane_subnet_refs     = module.aws_network.control_plane_subnet_refs
-  worker_subnet_refs            = module.aws_network.worker_subnet_refs
-  ami_id                        = var.aws_cluster.ami_id
-  ssh_key_name                  = var.aws_cluster.ssh_key_name
-  instance_profile_name         = var.aws_cluster.instance_profile_name
+  cluster_topology                     = var.cluster_topology
+  name_prefix                          = module.shared_labels.name_prefix
+  labels                               = module.shared_labels.labels
+  control_plane_instance_type          = var.aws_cluster.control_plane_instance_type
+  worker_instance_type                 = var.aws_cluster.worker_instance_type
+  control_plane_root_volume_gbs        = var.aws_cluster.control_plane_root_volume_gbs
+  worker_root_volume_gbs               = var.aws_cluster.worker_root_volume_gbs
+  worker_spot_enabled                  = var.aws_cluster.worker_spot_enabled
+  storage_class                        = var.aws_cluster.storage_class
+  control_plane_endpoint_access_intent = var.aws_cluster.control_plane_endpoint_access_intent
+  control_plane_placement_intent       = var.aws_cluster.control_plane_placement_intent
+  worker_placement_intent              = var.aws_cluster.worker_placement_intent
+  control_plane_subnet_refs            = module.aws_network.control_plane_subnet_refs
+  worker_subnet_refs                   = module.aws_network.worker_subnet_refs
+  control_plane_security_group_ids     = module.aws_network.control_plane_security_group_ids
+  worker_security_group_ids            = module.aws_network.worker_security_group_ids
+  ami_id                               = var.aws_cluster.ami_id
+  ssh_key_name                         = var.aws_cluster.ssh_key_name
+  instance_profile_name                = var.aws_cluster.instance_profile_name
   bootstrap_template_path = (
     var.aws_cluster.bootstrap_template_path == null || trimspace(var.aws_cluster.bootstrap_template_path) == ""
     ? null
@@ -145,21 +157,21 @@ module "aws_compute_nodes" {
 module "oci_compute_nodes" {
   source = "../../modules/oci_compute_nodes"
 
-  cluster_topology       = var.cluster_topology
-  compartment_ocid       = var.oci_cluster.compartment_ocid
-  name_prefix            = module.shared_labels.name_prefix
-  labels                 = module.shared_labels.labels
-  availability_domains   = var.oci_cluster.availability_domains
-  worker_shape           = var.oci_cluster.worker_shape
-  worker_ocpus           = var.oci_cluster.worker_ocpus
-  worker_memory_gbs      = var.oci_cluster.worker_memory_gbs
-  worker_boot_volume_gbs = var.oci_cluster.worker_boot_volume_gbs
-  workload_placement     = var.oci_cluster.workload_placement
-  worker_placement       = var.oci_cluster.worker_placement
-  storage_class          = var.oci_cluster.storage_class
-  worker_subnet_refs     = module.oci_network.worker_subnet_refs
-  image_ocid             = var.oci_cluster.image_ocid
-  ssh_authorized_keys    = var.oci_cluster.ssh_authorized_keys
+  cluster_topology          = var.cluster_topology
+  compartment_ocid          = var.oci_cluster.compartment_ocid
+  name_prefix               = module.shared_labels.name_prefix
+  labels                    = module.shared_labels.labels
+  worker_shape              = var.oci_cluster.worker_shape
+  worker_ocpus              = var.oci_cluster.worker_ocpus
+  worker_memory_gbs         = var.oci_cluster.worker_memory_gbs
+  worker_boot_volume_gbs    = var.oci_cluster.worker_boot_volume_gbs
+  workload_placement_intent = var.oci_cluster.workload_placement_intent
+  worker_placement_intent   = var.oci_cluster.worker_placement_intent
+  storage_class             = var.oci_cluster.storage_class
+  worker_subnet_bindings    = module.oci_network.worker_subnet_bindings
+  worker_nsg_ids            = module.oci_network.worker_nsg_ids
+  image_ocid                = var.oci_cluster.image_ocid
+  ssh_authorized_keys       = var.oci_cluster.ssh_authorized_keys
   bootstrap_template_path = (
     var.oci_cluster.bootstrap_template_path == null || trimspace(var.oci_cluster.bootstrap_template_path) == ""
     ? null

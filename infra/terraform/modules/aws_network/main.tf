@@ -84,6 +84,33 @@ locals {
     )
     : "reference"
   )
+
+  kubespray_security_profile_enabled = var.security_profile == "kubespray-default"
+
+  control_plane_internal_ingress_rules = {
+    for index, cidr in var.cluster_internal_cidrs :
+    format("internal-%02d", index + 1) => cidr
+  }
+
+  worker_internal_ingress_rules = {
+    for index, cidr in var.cluster_internal_cidrs :
+    format("internal-%02d", index + 1) => cidr
+  }
+
+  control_plane_admin_ingress_rules = var.ssh_access_mode == "cidr_allowlist" ? {
+    for index, cidr in var.admin_ingress_cidrs :
+    format("ssh-admin-%02d", index + 1) => cidr
+  } : {}
+
+  worker_admin_ingress_rules = var.ssh_access_mode == "cidr_allowlist" ? {
+    for index, cidr in var.admin_ingress_cidrs :
+    format("ssh-admin-%02d", index + 1) => cidr
+  } : {}
+
+  control_plane_api_ingress_rules = var.kube_api_access_mode == "public_allowlist" ? {
+    for index, cidr in var.kube_api_ingress_cidrs :
+    format("kube-api-%02d", index + 1) => cidr
+  } : {}
 }
 
 resource "aws_vpc" "this" {
@@ -228,6 +255,93 @@ resource "aws_route_table_association" "public_load_balancer" {
   route_table_id = aws_route_table.public[0].id
 }
 
+resource "aws_security_group" "control_plane" {
+  name        = format("%s-aws-control-plane", var.name_prefix)
+  description = "Control-plane access boundary for MoaDev VM foundations."
+  vpc_id      = local.vpc_ref
+
+  tags = merge(var.labels, {
+    Name = format("%s-aws-control-plane", var.name_prefix)
+    Role = "control-plane"
+  })
+}
+
+resource "aws_vpc_security_group_ingress_rule" "control_plane_internal" {
+  for_each = local.control_plane_internal_ingress_rules
+
+  security_group_id = aws_security_group.control_plane.id
+  description       = format("Allow cluster-internal traffic from %s", each.value)
+  cidr_ipv4         = each.value
+  ip_protocol       = "-1"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "control_plane_admin_ssh" {
+  for_each = local.control_plane_admin_ingress_rules
+
+  security_group_id = aws_security_group.control_plane.id
+  description       = format("Allow operator SSH from %s", each.value)
+  cidr_ipv4         = each.value
+  from_port         = 22
+  to_port           = 22
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "control_plane_kube_api" {
+  for_each = local.control_plane_api_ingress_rules
+
+  security_group_id = aws_security_group.control_plane.id
+  description       = format("Allow Kubernetes API from %s", each.value)
+  cidr_ipv4         = each.value
+  from_port         = 6443
+  to_port           = 6443
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_egress_rule" "control_plane_all" {
+  security_group_id = aws_security_group.control_plane.id
+  description       = "Allow all outbound traffic from control-plane nodes."
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}
+
+resource "aws_security_group" "worker" {
+  name        = format("%s-aws-worker", var.name_prefix)
+  description = "Worker access boundary for MoaDev VM foundations."
+  vpc_id      = local.vpc_ref
+
+  tags = merge(var.labels, {
+    Name = format("%s-aws-worker", var.name_prefix)
+    Role = "worker"
+  })
+}
+
+resource "aws_vpc_security_group_ingress_rule" "worker_internal" {
+  for_each = local.worker_internal_ingress_rules
+
+  security_group_id = aws_security_group.worker.id
+  description       = format("Allow cluster-internal traffic from %s", each.value)
+  cidr_ipv4         = each.value
+  ip_protocol       = "-1"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "worker_admin_ssh" {
+  for_each = local.worker_admin_ingress_rules
+
+  security_group_id = aws_security_group.worker.id
+  description       = format("Allow operator SSH from %s", each.value)
+  cidr_ipv4         = each.value
+  from_port         = 22
+  to_port           = 22
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_egress_rule" "worker_all" {
+  security_group_id = aws_security_group.worker.id
+  description       = "Allow all outbound traffic from worker nodes."
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}
+
 check "supported_network_mode" {
   assert {
     condition     = contains(["create", "reference"], var.network_mode)
@@ -242,6 +356,54 @@ check "supported_nat_gateway_mode" {
       contains(["single"], local.nat_gateway_mode)
     )
     error_message = "nat_gateway_mode must currently be set to single when AWS NAT egress is enabled."
+  }
+}
+
+check "supported_security_profile" {
+  assert {
+    condition     = local.kubespray_security_profile_enabled
+    error_message = "security_profile must currently be set to kubespray-default for AWS VM foundations."
+  }
+}
+
+check "supported_ssh_access_mode" {
+  assert {
+    condition     = contains(["none", "cidr_allowlist"], var.ssh_access_mode)
+    error_message = "ssh_access_mode must be either none or cidr_allowlist."
+  }
+}
+
+check "supported_kube_api_access_mode" {
+  assert {
+    condition     = contains(["private_only", "public_allowlist"], var.kube_api_access_mode)
+    error_message = "kube_api_access_mode must be either private_only or public_allowlist."
+  }
+}
+
+check "ssh_allowlist_requires_cidrs" {
+  assert {
+    condition = (
+      var.ssh_access_mode != "cidr_allowlist" ||
+      length(var.admin_ingress_cidrs) > 0
+    )
+    error_message = "admin_ingress_cidrs must be provided when ssh_access_mode is cidr_allowlist."
+  }
+}
+
+check "public_kube_api_requires_cidrs" {
+  assert {
+    condition = (
+      var.kube_api_access_mode != "public_allowlist" ||
+      length(var.kube_api_ingress_cidrs) > 0
+    )
+    error_message = "kube_api_ingress_cidrs must be provided when kube_api_access_mode is public_allowlist."
+  }
+}
+
+check "cluster_internal_cidrs_are_required" {
+  assert {
+    condition     = length(var.cluster_internal_cidrs) > 0
+    error_message = "cluster_internal_cidrs must include at least one cluster-internal CIDR."
   }
 }
 

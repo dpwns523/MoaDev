@@ -94,3 +94,39 @@ variable "nat_gateway_mode" {
   type        = string
   default     = "single"
 }
+
+variable "security_profile" {
+  description = "Named security profile used to derive AWS node access rules."
+  type        = string
+  default     = "kubespray-default"
+}
+
+variable "ssh_access_mode" {
+  description = "How operator SSH access should be modeled for AWS nodes."
+  type        = string
+  default     = "cidr_allowlist"
+}
+
+variable "admin_ingress_cidrs" {
+  description = "Allowed admin ingress CIDRs for AWS node access."
+  type        = list(string)
+  default     = []
+}
+
+variable "kube_api_access_mode" {
+  description = "How Kubernetes API access should be modeled for AWS control-plane nodes."
+  type        = string
+  default     = "private_only"
+}
+
+variable "kube_api_ingress_cidrs" {
+  description = "Allowed CIDRs for Kubernetes API ingress when public allowlisting is used."
+  type        = list(string)
+  default     = []
+}
+
+variable "cluster_internal_cidrs" {
+  description = "Cluster-internal CIDRs allowed for AWS node communication."
+  type        = list(string)
+  default     = []
+}

@@ -256,23 +256,34 @@ variable "cost_automation" {
 variable "oci_cluster" {
   description = "Provider-specific OCI cluster contract."
   type = object({
-    region                 = string
-    tenancy_ocid           = string
-    compartment_ocid       = string
-    network_mode           = optional(string, "reference")
-    vcn_ocid               = optional(string)
-    vcn_cidr               = optional(string)
-    availability_domains   = optional(list(string), [])
-    worker_subnet_ocids    = optional(list(string), [])
-    worker_subnet_cidrs    = optional(list(string), [])
-    worker_shape           = string
-    worker_ocpus           = number
-    worker_memory_gbs      = number
-    worker_boot_volume_gbs = optional(number, 50)
-    workload_placement     = string
-    storage_class          = string
-    worker_placement       = optional(string, "private-subnets")
-    bastion_enabled        = optional(bool, false)
+    region               = string
+    tenancy_ocid         = string
+    compartment_ocid     = string
+    network_mode         = optional(string, "reference")
+    vcn_ocid             = optional(string)
+    vcn_cidr             = optional(string)
+    availability_domains = optional(list(string), [])
+    existing_worker_subnet_bindings = optional(list(object({
+      subnet_id           = string
+      availability_domain = string
+    })), [])
+    worker_subnet_cidrs       = optional(list(string), [])
+    worker_shape              = string
+    worker_ocpus              = number
+    worker_memory_gbs         = number
+    worker_boot_volume_gbs    = optional(number, 50)
+    workload_placement_intent = optional(string, "availability-domain-spread")
+    storage_class             = string
+    worker_placement_intent   = optional(string, "private-subnets")
+    bastion_enabled           = optional(bool, false)
+    nat_gateway_enabled       = optional(bool, true)
+    image_ocid                = optional(string)
+    ssh_authorized_keys       = optional(string)
+    bootstrap_template_path   = optional(string)
+    security_profile          = optional(string, "kubespray-default")
+    ssh_access_mode           = optional(string, "cidr_allowlist")
+    admin_ingress_cidrs       = optional(list(string), [])
+    cluster_internal_cidrs    = optional(list(string), [])
   })
 
   validation {
@@ -291,47 +302,65 @@ variable "oci_cluster" {
         ) :
         (
           trimspace(try(var.oci_cluster.vcn_ocid, "")) != "" &&
-          length(var.oci_cluster.worker_subnet_ocids) > 0 &&
-          alltrue([for subnet_id in var.oci_cluster.worker_subnet_ocids : trimspace(subnet_id) != ""])
+          length(var.oci_cluster.existing_worker_subnet_bindings) > 0 &&
+          alltrue([
+            for binding in var.oci_cluster.existing_worker_subnet_bindings :
+            trimspace(binding.subnet_id) != "" && trimspace(binding.availability_domain) != ""
+          ])
         )
       ) &&
       trimspace(var.oci_cluster.worker_shape) != "" &&
       var.oci_cluster.worker_ocpus > 0 &&
       var.oci_cluster.worker_memory_gbs > 0 &&
       var.oci_cluster.worker_boot_volume_gbs > 0 &&
-      trimspace(var.oci_cluster.workload_placement) != "" &&
+      trimspace(var.oci_cluster.workload_placement_intent) != "" &&
       trimspace(var.oci_cluster.storage_class) != "" &&
-      contains(["private-subnets", "mixed"], var.oci_cluster.worker_placement)
+      contains(["availability-domain-spread", "manual"], var.oci_cluster.workload_placement_intent) &&
+      contains(["private-subnets", "mixed"], var.oci_cluster.worker_placement_intent) &&
+      contains(["kubespray-default"], var.oci_cluster.security_profile) &&
+      contains(["none", "cidr_allowlist"], var.oci_cluster.ssh_access_mode)
     )
-    error_message = "oci_cluster must define non-empty provider identifiers, a supported network_mode, valid create/reference network inputs, positive sizing values, storage, and a supported worker_placement value."
+    error_message = "oci_cluster must define non-empty provider identifiers, a supported network_mode, valid create/reference network inputs, positive sizing values, storage, and supported intent/access values."
   }
 }
 
 variable "aws_cluster" {
   description = "Provider-specific AWS cluster contract."
   type = object({
-    region                            = string
-    account_id                        = string
-    network_mode                      = optional(string, "reference")
-    vpc_id                            = optional(string)
-    vpc_cidr                          = optional(string)
-    availability_zones                = optional(list(string), [])
-    control_plane_subnet_ids          = optional(list(string), [])
-    worker_subnet_ids                 = optional(list(string), [])
-    public_load_balancer_subnet_ids   = optional(list(string), [])
-    control_plane_subnet_cidrs        = optional(list(string), [])
-    worker_subnet_cidrs               = optional(list(string), [])
-    public_load_balancer_subnet_cidrs = optional(list(string), [])
-    control_plane_instance_type       = string
-    worker_instance_type              = string
-    control_plane_root_volume_gbs     = optional(number, 50)
-    worker_root_volume_gbs            = optional(number, 80)
-    worker_spot_enabled               = bool
-    storage_class                     = string
-    control_plane_endpoint_access     = optional(string, "private")
-    control_plane_placement           = optional(string, "private-subnets")
-    worker_placement                  = optional(string, "private-subnets")
-    bastion_enabled                   = optional(bool, false)
+    region                               = string
+    account_id                           = string
+    network_mode                         = optional(string, "reference")
+    vpc_id                               = optional(string)
+    vpc_cidr                             = optional(string)
+    availability_zones                   = optional(list(string), [])
+    control_plane_subnet_ids             = optional(list(string), [])
+    worker_subnet_ids                    = optional(list(string), [])
+    public_load_balancer_subnet_ids      = optional(list(string), [])
+    control_plane_subnet_cidrs           = optional(list(string), [])
+    worker_subnet_cidrs                  = optional(list(string), [])
+    public_load_balancer_subnet_cidrs    = optional(list(string), [])
+    control_plane_instance_type          = string
+    worker_instance_type                 = string
+    control_plane_root_volume_gbs        = optional(number, 50)
+    worker_root_volume_gbs               = optional(number, 80)
+    worker_spot_enabled                  = bool
+    storage_class                        = string
+    control_plane_endpoint_access_intent = optional(string, "private_only")
+    control_plane_placement_intent       = optional(string, "private-subnets")
+    worker_placement_intent              = optional(string, "private-subnets")
+    bastion_enabled                      = optional(bool, false)
+    nat_gateway_enabled                  = optional(bool, true)
+    nat_gateway_mode                     = optional(string, "single")
+    ami_id                               = optional(string)
+    ssh_key_name                         = optional(string)
+    instance_profile_name                = optional(string)
+    bootstrap_template_path              = optional(string)
+    security_profile                     = optional(string, "kubespray-default")
+    ssh_access_mode                      = optional(string, "cidr_allowlist")
+    admin_ingress_cidrs                  = optional(list(string), [])
+    kube_api_access_mode                 = optional(string, "private_only")
+    kube_api_ingress_cidrs               = optional(list(string), [])
+    cluster_internal_cidrs               = optional(list(string), [])
   })
 
   validation {
@@ -366,10 +395,14 @@ variable "aws_cluster" {
       var.aws_cluster.control_plane_root_volume_gbs > 0 &&
       var.aws_cluster.worker_root_volume_gbs > 0 &&
       trimspace(var.aws_cluster.storage_class) != "" &&
-      contains(["private", "public"], var.aws_cluster.control_plane_endpoint_access) &&
-      contains(["private-subnets", "public-subnets", "mixed"], var.aws_cluster.control_plane_placement) &&
-      contains(["private-subnets", "public-subnets", "mixed"], var.aws_cluster.worker_placement)
+      contains(["single"], var.aws_cluster.nat_gateway_mode) &&
+      contains(["private_only", "public_allowlist"], var.aws_cluster.control_plane_endpoint_access_intent) &&
+      contains(["private-subnets", "public-subnets", "mixed"], var.aws_cluster.control_plane_placement_intent) &&
+      contains(["private-subnets", "public-subnets", "mixed"], var.aws_cluster.worker_placement_intent) &&
+      contains(["kubespray-default"], var.aws_cluster.security_profile) &&
+      contains(["none", "cidr_allowlist"], var.aws_cluster.ssh_access_mode) &&
+      contains(["private_only", "public_allowlist"], var.aws_cluster.kube_api_access_mode)
     )
-    error_message = "aws_cluster must define non-empty provider identifiers, a supported network_mode, valid create/reference network inputs, positive volume sizes, instance types, storage, and supported placement/access values."
+    error_message = "aws_cluster must define non-empty provider identifiers, a supported network_mode, valid create/reference network inputs, positive volume sizes, instance types, storage, and supported NAT/intent/access values."
   }
 }

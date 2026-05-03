@@ -13,6 +13,16 @@ output "worker_subnet_refs" {
   value       = local.worker_subnet_refs
 }
 
+output "control_plane_security_group_ids" {
+  description = "Security groups attached to AWS control-plane nodes."
+  value       = [aws_security_group.control_plane.id]
+}
+
+output "worker_security_group_ids" {
+  description = "Security groups attached to AWS worker nodes."
+  value       = [aws_security_group.worker.id]
+}
+
 output "public_load_balancer_subnet_refs" {
   description = "Public load-balancer subnet references, either planned names or existing IDs."
   value       = local.public_load_balancer_subnet_refs
@@ -33,8 +43,13 @@ output "summary" {
     worker_subnet_refs                 = local.worker_subnet_refs
     public_load_balancer_subnet_layout = local.public_load_balancer_subnet_plan
     public_load_balancer_subnet_refs   = local.public_load_balancer_subnet_refs
+    control_plane_security_group_ids   = [aws_security_group.control_plane.id]
+    worker_security_group_ids          = [aws_security_group.worker.id]
     nat_gateway_enabled                = local.nat_gateway_enabled
     private_egress_mode                = local.private_egress_mode
+    security_profile                   = var.security_profile
+    ssh_access_mode                    = var.ssh_access_mode
+    kube_api_access_mode               = var.kube_api_access_mode
     labels                             = var.labels
   }
 }

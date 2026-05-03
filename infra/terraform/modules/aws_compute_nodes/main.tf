@@ -42,8 +42,8 @@ locals {
       instance_type             = var.control_plane_instance_type
       root_volume_gbs           = var.control_plane_root_volume_gbs
       subnet_refs               = var.control_plane_subnet_refs
-      endpoint_access           = var.control_plane_endpoint_access
-      placement                 = var.control_plane_placement
+      endpoint_access_intent    = var.control_plane_endpoint_access_intent
+      placement_intent          = var.control_plane_placement_intent
       storage_class             = var.storage_class
       supports_future_scale_out = node_group.max_count > node_group.desired_count
       labels                    = var.labels
@@ -63,7 +63,7 @@ locals {
       instance_type        = var.worker_instance_type
       root_volume_gbs      = var.worker_root_volume_gbs
       subnet_refs          = var.worker_subnet_refs
-      placement            = var.worker_placement
+      placement_intent     = var.worker_placement_intent
       storage_class        = var.storage_class
       spot_enabled         = var.worker_spot_enabled
       labels               = var.labels
@@ -88,15 +88,15 @@ locals {
         bootstrap_user_data = (
           local.normalized_bootstrap_path != "" && fileexists(local.normalized_bootstrap_path)
           ? templatefile(local.normalized_bootstrap_path, {
-            cluster_name       = var.cluster_topology.cluster_name
-            kubernetes_version = var.cluster_topology.kubernetes_version
-            node_group_name    = name
-            node_role          = node_group.role
-            instance_name      = format("%s-%02d", node_group.resource_name_prefix, index + 1)
-            storage_class      = var.storage_class
-            control_plane_mode = var.control_plane_endpoint_access
-            placement          = var.control_plane_placement
-            cloud_provider     = "aws"
+            cluster_name                         = var.cluster_topology.cluster_name
+            kubernetes_version                   = var.cluster_topology.kubernetes_version
+            node_group_name                      = name
+            node_role                            = node_group.role
+            instance_name                        = format("%s-%02d", node_group.resource_name_prefix, index + 1)
+            storage_class                        = var.storage_class
+            control_plane_endpoint_access_intent = var.control_plane_endpoint_access_intent
+            placement_intent                     = var.control_plane_placement_intent
+            cloud_provider                       = "aws"
           })
           : <<-EOT
             #!/bin/bash
@@ -109,8 +109,8 @@ locals {
             MOADEV_NODE_ROLE=${node_group.role}
             MOADEV_INSTANCE_NAME=${format("%s-%02d", node_group.resource_name_prefix, index + 1)}
             MOADEV_STORAGE_CLASS=${var.storage_class}
-            MOADEV_CONTROL_PLANE_ENDPOINT_ACCESS=${var.control_plane_endpoint_access}
-            MOADEV_PLACEMENT=${var.control_plane_placement}
+            MOADEV_CONTROL_PLANE_ENDPOINT_ACCESS_INTENT=${var.control_plane_endpoint_access_intent}
+            MOADEV_PLACEMENT_INTENT=${var.control_plane_placement_intent}
             EOF
             echo "TODO: replace placeholder bootstrap with Kubespray or host bootstrap workflow" >/etc/motd
           EOT
@@ -134,15 +134,15 @@ locals {
         bootstrap_user_data = (
           local.normalized_bootstrap_path != "" && fileexists(local.normalized_bootstrap_path)
           ? templatefile(local.normalized_bootstrap_path, {
-            cluster_name       = var.cluster_topology.cluster_name
-            kubernetes_version = var.cluster_topology.kubernetes_version
-            node_group_name    = name
-            node_role          = node_group.role
-            instance_name      = format("%s-%02d", node_group.resource_name_prefix, index + 1)
-            storage_class      = var.storage_class
-            control_plane_mode = var.control_plane_endpoint_access
-            placement          = var.worker_placement
-            cloud_provider     = "aws"
+            cluster_name                         = var.cluster_topology.cluster_name
+            kubernetes_version                   = var.cluster_topology.kubernetes_version
+            node_group_name                      = name
+            node_role                            = node_group.role
+            instance_name                        = format("%s-%02d", node_group.resource_name_prefix, index + 1)
+            storage_class                        = var.storage_class
+            control_plane_endpoint_access_intent = var.control_plane_endpoint_access_intent
+            placement_intent                     = var.worker_placement_intent
+            cloud_provider                       = "aws"
           })
           : <<-EOT
             #!/bin/bash
@@ -156,7 +156,8 @@ locals {
             MOADEV_INSTANCE_NAME=${format("%s-%02d", node_group.resource_name_prefix, index + 1)}
             MOADEV_STORAGE_CLASS=${var.storage_class}
             MOADEV_WORKER_SPOT_ENABLED=${var.worker_spot_enabled}
-            MOADEV_PLACEMENT=${var.worker_placement}
+            MOADEV_CONTROL_PLANE_ENDPOINT_ACCESS_INTENT=${var.control_plane_endpoint_access_intent}
+            MOADEV_PLACEMENT_INTENT=${var.worker_placement_intent}
             EOF
             echo "TODO: replace placeholder bootstrap with Kubespray or host bootstrap workflow" >/etc/motd
           EOT
@@ -172,6 +173,7 @@ resource "aws_instance" "control_plane" {
   ami                         = local.aws_instance_resources_enabled ? var.ami_id : "ami-disabled-placeholder"
   instance_type               = each.value.instance_type
   subnet_id                   = each.value.subnet_id
+  vpc_security_group_ids      = var.control_plane_security_group_ids
   key_name                    = local.normalized_key_name
   iam_instance_profile        = local.normalized_instance_profile
   user_data                   = each.value.bootstrap_user_data
@@ -192,13 +194,13 @@ resource "aws_instance" "control_plane" {
   }
 
   tags = merge(each.value.labels, {
-    Name             = each.value.instance_name
-    ClusterName      = var.cluster_topology.cluster_name
-    KubernetesRole   = each.value.role
-    NodeGroup        = each.value.node_group_name
-    StorageClass     = each.value.storage_class
-    ControlPlaneMode = each.value.endpoint_access
-    ManagedBy        = "terraform"
+    Name                     = each.value.instance_name
+    ClusterName              = var.cluster_topology.cluster_name
+    KubernetesRole           = each.value.role
+    NodeGroup                = each.value.node_group_name
+    StorageClass             = each.value.storage_class
+    ControlPlaneAccessIntent = each.value.endpoint_access_intent
+    ManagedBy                = "terraform"
   })
 }
 
@@ -208,6 +210,7 @@ resource "aws_instance" "worker" {
   ami                         = local.aws_instance_resources_enabled ? var.ami_id : "ami-disabled-placeholder"
   instance_type               = each.value.instance_type
   subnet_id                   = each.value.subnet_id
+  vpc_security_group_ids      = var.worker_security_group_ids
   key_name                    = local.normalized_key_name
   iam_instance_profile        = local.normalized_instance_profile
   user_data                   = each.value.bootstrap_user_data
@@ -262,6 +265,20 @@ check "aws_worker_groups_have_subnets" {
   assert {
     condition     = length(local.aws_worker_node_groups) == 0 || length(var.worker_subnet_refs) > 0
     error_message = "AWS worker node groups require at least one worker subnet reference."
+  }
+}
+
+check "aws_control_plane_groups_have_security_groups" {
+  assert {
+    condition     = length(local.aws_control_plane_node_groups) == 0 || length(var.control_plane_security_group_ids) > 0
+    error_message = "AWS control-plane node groups require explicit security groups."
+  }
+}
+
+check "aws_worker_groups_have_security_groups" {
+  assert {
+    condition     = length(local.aws_worker_node_groups) == 0 || length(var.worker_security_group_ids) > 0
+    error_message = "AWS worker node groups require explicit security groups."
   }
 }
 

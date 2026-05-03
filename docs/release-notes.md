@@ -6,6 +6,52 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `terraform-foundation-security-boundaries`
+
+- Date: `2026-05-03`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Refined the Terraform VM foundation contract so AWS and OCI nodes use explicit security boundaries, OCI reference-mode worker subnet inputs preserve availability-domain bindings, and intent-only placement/access fields are named as intents instead of operational guarantees.
+
+### User Impact
+
+- Who is affected: contributors and operators maintaining the multi-cloud Terraform environment roots and sample tfvars
+- What users will notice: `terraform.tfvars.example` now includes explicit cluster-internal/admin access inputs, OCI reference mode expects subnet/availability-domain bindings, and AWS/OCI VM foundations no longer rely on provider default security rules
+- Expected benefits: less ambiguous placement config, fewer OCI reference-mode apply failures, and more reproducible AWS/OCI node network posture across accounts
+
+### Migration Notes
+
+- Required upgrade steps: refresh any local `terraform.tfvars` copies from the updated examples before running Terraform validation or plan
+- Data or config changes: AWS security groups and OCI network security groups are now managed by Terraform for VM nodes, and OCI reference mode must provide worker subnet bindings instead of a flat subnet list
+- Operator actions: update local AWS/OCI sample overrides to include `cluster_internal_cidrs`, admin access allowlists, and any OCI reference-mode subnet bindings before applying Terraform
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new process environment variables were introduced; the change is in Terraform input contract shape only. |
+
+### Breaking Changes
+
+- OCI reference-mode worker subnet inputs now require `(subnet_id, availability_domain)` bindings.
+- AWS and OCI example cluster blocks now use `*_intent` field names for placement/access hints.
+
+### Rollback Notes
+
+- Rollback trigger: the explicit security boundary contract blocks current operator workflows or the OCI binding change proves too strict for existing reference-mode inputs
+- Rollback steps: revert the Terraform contract rename, remove the managed AWS/OCI node security boundaries, and restore the older flat OCI worker subnet reference list
+- Data recovery notes: none
+
+### Known Issues
+
+- The Terraform modules still stop at VM foundations and bootstrap placeholders; cluster join, Kubespray inventory materialization, and day-2 host configuration remain follow-up work.
+- `security_profile` currently supports only the `kubespray-default` rule set.
+
+---
+
 ## Release: `article-persistence-baseline`
 
 - Date: `2026-04-21`

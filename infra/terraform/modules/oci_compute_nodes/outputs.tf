@@ -24,16 +24,17 @@ output "worker_node_group_names" {
 output "summary" {
   description = "Safe summary of the OCI compute node foundation."
   value = {
-    cluster_name       = var.cluster_topology.cluster_name
-    worker_shape       = var.worker_shape
-    worker_ocpus       = var.worker_ocpus
-    worker_memory_gbs  = var.worker_memory_gbs
-    worker_groups      = sort(keys(local.oci_worker_node_groups))
-    worker_instances   = sort(keys(local.worker_instance_plan))
-    worker_subnet_refs = var.worker_subnet_refs
-    workload_placement = var.workload_placement
-    worker_placement   = var.worker_placement
-    storage_class      = var.storage_class
-    resource_mode      = local.oci_instance_resources_enabled ? "provider-backed-vm" : "contract-only-until-image-is-set"
+    cluster_name              = var.cluster_topology.cluster_name
+    worker_shape              = var.worker_shape
+    worker_ocpus              = var.worker_ocpus
+    worker_memory_gbs         = var.worker_memory_gbs
+    worker_groups             = sort(keys(local.oci_worker_node_groups))
+    worker_instances          = sort(keys(local.worker_instance_plan))
+    worker_subnet_bindings    = var.worker_subnet_bindings
+    worker_nsg_ids            = var.worker_nsg_ids
+    workload_placement_intent = var.workload_placement_intent
+    worker_placement_intent   = var.worker_placement_intent
+    storage_class             = var.storage_class
+    resource_mode             = local.oci_instance_resources_enabled ? "provider-backed-vm" : "contract-only-until-image-is-set"
   }
 }

@@ -58,18 +58,18 @@ variable "storage_class" {
   type        = string
 }
 
-variable "control_plane_endpoint_access" {
-  description = "Endpoint access mode for the AWS control plane."
+variable "control_plane_endpoint_access_intent" {
+  description = "Endpoint exposure intent for AWS control-plane nodes."
   type        = string
 }
 
-variable "control_plane_placement" {
-  description = "Placement model for AWS control-plane nodes."
+variable "control_plane_placement_intent" {
+  description = "Placement intent for AWS control-plane nodes."
   type        = string
 }
 
-variable "worker_placement" {
-  description = "Placement model for AWS worker nodes."
+variable "worker_placement_intent" {
+  description = "Placement intent for AWS worker nodes."
   type        = string
 }
 
@@ -80,6 +80,16 @@ variable "control_plane_subnet_refs" {
 
 variable "worker_subnet_refs" {
   description = "Worker subnet references for AWS node groups."
+  type        = list(string)
+}
+
+variable "control_plane_security_group_ids" {
+  description = "Security groups attached to AWS control-plane nodes."
+  type        = list(string)
+}
+
+variable "worker_security_group_ids" {
+  description = "Security groups attached to AWS worker nodes."
   type        = list(string)
 }
 

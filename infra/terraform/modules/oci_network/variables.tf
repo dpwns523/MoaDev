@@ -58,14 +58,41 @@ variable "existing_vcn_ocid" {
   default     = ""
 }
 
-variable "existing_worker_subnet_ocids" {
-  description = "Existing worker subnet OCIDs used in reference mode."
-  type        = list(string)
-  default     = []
+variable "existing_worker_subnet_bindings" {
+  description = "Existing worker subnet bindings used in reference mode."
+  type = list(object({
+    subnet_id           = string
+    availability_domain = string
+  }))
+  default = []
 }
 
 variable "nat_gateway_enabled" {
   description = "Whether create mode should provision NAT egress for OCI private subnets."
   type        = bool
   default     = true
+}
+
+variable "security_profile" {
+  description = "Named security profile used to derive OCI node access rules."
+  type        = string
+  default     = "kubespray-default"
+}
+
+variable "ssh_access_mode" {
+  description = "How operator SSH access should be modeled for OCI nodes."
+  type        = string
+  default     = "cidr_allowlist"
+}
+
+variable "admin_ingress_cidrs" {
+  description = "Allowed admin ingress CIDRs for OCI node access."
+  type        = list(string)
+  default     = []
+}
+
+variable "cluster_internal_cidrs" {
+  description = "Cluster-internal CIDRs allowed for OCI node communication."
+  type        = list(string)
+  default     = []
 }

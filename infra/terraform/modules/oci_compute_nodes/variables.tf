@@ -53,13 +53,13 @@ variable "worker_boot_volume_gbs" {
   type        = number
 }
 
-variable "workload_placement" {
-  description = "Workload placement policy for OCI worker nodes."
+variable "workload_placement_intent" {
+  description = "Workload placement intent for OCI worker nodes."
   type        = string
 }
 
-variable "worker_placement" {
-  description = "Network placement policy for OCI worker nodes."
+variable "worker_placement_intent" {
+  description = "Network placement intent for OCI worker nodes."
   type        = string
 }
 
@@ -68,13 +68,16 @@ variable "storage_class" {
   type        = string
 }
 
-variable "worker_subnet_refs" {
-  description = "Worker subnet references for OCI node groups."
-  type        = list(string)
+variable "worker_subnet_bindings" {
+  description = "Worker subnet bindings for OCI node groups."
+  type = list(object({
+    subnet_id           = string
+    availability_domain = string
+  }))
 }
 
-variable "availability_domains" {
-  description = "Availability domains used to spread OCI worker instances."
+variable "worker_nsg_ids" {
+  description = "NSG identifiers attached to OCI worker instances."
   type        = list(string)
 }
 
