@@ -6,6 +6,52 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `terraform-foundation-security-boundaries`
+
+- Date: `2026-05-03`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Refined the Terraform VM foundation contract so AWS and OCI nodes use explicit security boundaries, OCI reference-mode worker subnet inputs preserve availability-domain bindings, and intent-only placement/access fields are named as intents instead of operational guarantees.
+
+### User Impact
+
+- Who is affected: contributors and operators maintaining the multi-cloud Terraform environment roots and sample tfvars
+- What users will notice: `terraform.tfvars.example` now includes explicit cluster-internal/admin access inputs, OCI reference mode expects subnet/availability-domain bindings, and AWS/OCI VM foundations no longer rely on provider default security rules
+- Expected benefits: less ambiguous placement config, fewer OCI reference-mode apply failures, and more reproducible AWS/OCI node network posture across accounts
+
+### Migration Notes
+
+- Required upgrade steps: refresh any local `terraform.tfvars` copies from the updated examples before running Terraform validation or plan
+- Data or config changes: AWS security groups and OCI network security groups are now managed by Terraform for VM nodes, and OCI reference mode must provide worker subnet bindings instead of a flat subnet list
+- Operator actions: update local AWS/OCI sample overrides to include `cluster_internal_cidrs`, admin access allowlists, and any OCI reference-mode subnet bindings before applying Terraform
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new process environment variables were introduced; the change is in Terraform input contract shape only. |
+
+### Breaking Changes
+
+- OCI reference-mode worker subnet inputs now require `(subnet_id, availability_domain)` bindings.
+- AWS and OCI example cluster blocks now use `*_intent` field names for placement/access hints.
+
+### Rollback Notes
+
+- Rollback trigger: the explicit security boundary contract blocks current operator workflows or the OCI binding change proves too strict for existing reference-mode inputs
+- Rollback steps: revert the Terraform contract rename, remove the managed AWS/OCI node security boundaries, and restore the older flat OCI worker subnet reference list
+- Data recovery notes: none
+
+### Known Issues
+
+- The Terraform modules still stop at VM foundations and bootstrap placeholders; cluster join, Kubespray inventory materialization, and day-2 host configuration remain follow-up work.
+- `security_profile` currently supports only the `kubespray-default` rule set.
+
+---
+
 ## Release: `article-persistence-baseline`
 
 - Date: `2026-04-21`
@@ -137,6 +183,51 @@ Reframed the repository from a generic developer feed direction to an authentica
 
 - Source licensing, raw content retention policy, and exact auth provider choice remain open decisions.
 - The runtime, API, and web code still need implementation work to match the new plan.
+
+---
+
+## Release: `terraform-vm-cluster-foundations`
+
+- Date: `2026-04-21`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Expanded Terraform from a contract-only baseline into AWS and OCI VM-cluster foundations with reusable shared-label, networking, provider-backed VM node resources, optional dev-scheduler intent, and an example-driven topology diagram.
+
+### User Impact
+
+- Who is affected: contributors and operators working on Terraform platform scaffolding
+- What users will notice: `infra/terraform/envs/dev` and `infra/terraform/envs/prod` now wire shared labels, AWS/OCI foundation modules, private-subnet NAT egress, provider-backed VM node resources, and example tfvars that describe create/reference network modes plus bootstrap-template paths
+- Expected benefits: clearer reviewable Terraform scope for issue `#13`, less ambiguity around what AWS and OCI foundations are meant to look like, and a more honest handoff point into Kubespray and host bootstrap follow-up work
+
+### Migration Notes
+
+- Required upgrade steps: rerun `terraform init -backend=false` in each Terraform environment root so the provider lock files match the checked-in constraints
+- Data or config changes: AWS and OCI example tfvars now include explicit network mode, CIDR, subnet layout, NAT toggles, image or AMI identifiers, and bootstrap-template paths
+- Operator actions: refresh any local `terraform.tfvars` copies from the updated examples before validating or planning Terraform changes, then replace the sample AMI, image, and key values outside version control before any real apply
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new environment variables were introduced. |
+
+### Breaking Changes
+
+- Terraform environment roots now expect the expanded `shared_labels`, `aws_cluster`, `oci_cluster`, and optional `aws_dev_scheduler` contract fields used by the foundation modules.
+
+### Rollback Notes
+
+- Rollback trigger: the new network or provider scaffolding blocks Terraform validation in the current contributor environment
+- Rollback steps: remove the foundation module wiring, revert the provider version pins and env-root contract additions, and fall back to the earlier contract-only Terraform state
+- Data recovery notes: none
+
+### Known Issues
+
+- The current Terraform modules stop at VM foundations and bootstrap placeholders; actual cluster join, Kubespray inventory, and host-level day-2 configuration still belong to follow-up work.
+- Local validation currently depends on provider versions that remain compatible with the contributor's installed Terraform CLI.
 
 ---
 

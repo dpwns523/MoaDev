@@ -20,6 +20,23 @@ variable "platform_topology" {
   }
 }
 
+variable "shared_labels" {
+  description = "Shared label and name-prefix settings for infrastructure modules."
+  type = object({
+    naming_prefix_pattern = string
+    labels                = list(string)
+  })
+  nullable = false
+
+  validation {
+    condition = (
+      trimspace(var.shared_labels.naming_prefix_pattern) != "" &&
+      length(var.shared_labels.labels) > 0
+    )
+    error_message = "shared_labels must define a non-empty naming_prefix_pattern and at least one label key."
+  }
+}
+
 variable "cluster_topology" {
   description = "Shared cluster topology settings forwarded to the platform contract module."
   type = object({
@@ -143,41 +160,200 @@ variable "cost_automation" {
 }
 
 variable "oci_cluster" {
-  description = "OCI provider settings forwarded to the platform contract module."
+  description = "OCI provider settings forwarded to the platform contract module and OCI skeleton modules."
   type = object({
-    region              = string
-    tenancy_ocid        = string
-    compartment_ocid    = string
-    vcn_ocid            = string
-    worker_subnet_ocids = list(string)
-    worker_shape        = string
-    worker_ocpus        = number
-    worker_memory_gbs   = number
-    workload_placement  = string
-    storage_class       = string
-    worker_placement    = optional(string, "private-subnets")
-    bastion_enabled     = optional(bool, false)
+    region               = string
+    tenancy_ocid         = string
+    compartment_ocid     = string
+    network_mode         = optional(string, "reference")
+    vcn_ocid             = optional(string)
+    vcn_cidr             = optional(string)
+    availability_domains = optional(list(string), [])
+    existing_worker_subnet_bindings = optional(list(object({
+      subnet_id           = string
+      availability_domain = string
+    })), [])
+    worker_subnet_cidrs       = optional(list(string), [])
+    worker_shape              = string
+    worker_ocpus              = number
+    worker_memory_gbs         = number
+    worker_boot_volume_gbs    = optional(number, 50)
+    workload_placement_intent = optional(string, "availability-domain-spread")
+    storage_class             = string
+    worker_placement_intent   = optional(string, "private-subnets")
+    bastion_enabled           = optional(bool, false)
+    nat_gateway_enabled       = optional(bool, true)
+    image_ocid                = optional(string)
+    ssh_authorized_keys       = optional(string)
+    bootstrap_template_path   = optional(string)
+    security_profile          = optional(string, "kubespray-default")
+    ssh_access_mode           = optional(string, "cidr_allowlist")
+    admin_ingress_cidrs       = optional(list(string), [])
+    cluster_internal_cidrs    = optional(list(string), [])
   })
   nullable = false
+
+  validation {
+    condition = (
+      trimspace(var.oci_cluster.region) != "" &&
+      trimspace(var.oci_cluster.tenancy_ocid) != "" &&
+      trimspace(var.oci_cluster.compartment_ocid) != "" &&
+      contains(["create", "reference"], var.oci_cluster.network_mode) &&
+      (
+        var.oci_cluster.network_mode == "create" ?
+        (
+          can(cidrhost(var.oci_cluster.vcn_cidr, 0)) &&
+          length(var.oci_cluster.availability_domains) > 0 &&
+          length(var.oci_cluster.worker_subnet_cidrs) > 0 &&
+          alltrue([for cidr in var.oci_cluster.worker_subnet_cidrs : can(cidrhost(cidr, 0))])
+        ) :
+        (
+          trimspace(try(var.oci_cluster.vcn_ocid, "")) != "" &&
+          length(var.oci_cluster.existing_worker_subnet_bindings) > 0 &&
+          alltrue([
+            for binding in var.oci_cluster.existing_worker_subnet_bindings :
+            trimspace(binding.subnet_id) != "" && trimspace(binding.availability_domain) != ""
+          ])
+        )
+      ) &&
+      trimspace(var.oci_cluster.worker_shape) != "" &&
+      var.oci_cluster.worker_ocpus > 0 &&
+      var.oci_cluster.worker_memory_gbs > 0 &&
+      var.oci_cluster.worker_boot_volume_gbs > 0 &&
+      trimspace(var.oci_cluster.workload_placement_intent) != "" &&
+      trimspace(var.oci_cluster.storage_class) != "" &&
+      contains(["availability-domain-spread", "manual"], var.oci_cluster.workload_placement_intent) &&
+      contains(["private-subnets", "mixed"], var.oci_cluster.worker_placement_intent) &&
+      contains(["kubespray-default"], var.oci_cluster.security_profile) &&
+      contains(["none", "cidr_allowlist"], var.oci_cluster.ssh_access_mode) &&
+      (
+        var.oci_cluster.ssh_access_mode != "cidr_allowlist" ||
+        length(var.oci_cluster.admin_ingress_cidrs) > 0
+      ) &&
+      (
+        length(var.oci_cluster.cluster_internal_cidrs) > 0 &&
+        alltrue([for cidr in var.oci_cluster.cluster_internal_cidrs : can(cidrhost(cidr, 0))])
+      ) &&
+      alltrue([for cidr in var.oci_cluster.admin_ingress_cidrs : can(cidrhost(cidr, 0))])
+    )
+    error_message = "oci_cluster must define provider identifiers, a supported network_mode, valid create/reference network inputs, positive sizing values, storage, supported intent/access values, and valid internal/admin CIDRs."
+  }
 }
 
 variable "aws_cluster" {
-  description = "AWS provider settings forwarded to the platform contract module."
+  description = "AWS provider settings forwarded to the platform contract module and AWS skeleton modules."
   type = object({
-    region                          = string
-    account_id                      = string
-    vpc_id                          = string
-    control_plane_subnet_ids        = list(string)
-    worker_subnet_ids               = list(string)
-    public_load_balancer_subnet_ids = list(string)
-    control_plane_instance_type     = string
-    worker_instance_type            = string
-    worker_spot_enabled             = bool
-    storage_class                   = string
-    control_plane_endpoint_access   = optional(string, "private")
-    control_plane_placement         = optional(string, "private-subnets")
-    worker_placement                = optional(string, "private-subnets")
-    bastion_enabled                 = optional(bool, false)
+    region                               = string
+    account_id                           = string
+    network_mode                         = optional(string, "reference")
+    vpc_id                               = optional(string)
+    vpc_cidr                             = optional(string)
+    availability_zones                   = optional(list(string), [])
+    control_plane_subnet_ids             = optional(list(string), [])
+    worker_subnet_ids                    = optional(list(string), [])
+    public_load_balancer_subnet_ids      = optional(list(string), [])
+    control_plane_subnet_cidrs           = optional(list(string), [])
+    worker_subnet_cidrs                  = optional(list(string), [])
+    public_load_balancer_subnet_cidrs    = optional(list(string), [])
+    control_plane_instance_type          = string
+    worker_instance_type                 = string
+    control_plane_root_volume_gbs        = optional(number, 50)
+    worker_root_volume_gbs               = optional(number, 80)
+    worker_spot_enabled                  = bool
+    storage_class                        = string
+    control_plane_endpoint_access_intent = optional(string, "private_only")
+    control_plane_placement_intent       = optional(string, "private-subnets")
+    worker_placement_intent              = optional(string, "private-subnets")
+    bastion_enabled                      = optional(bool, false)
+    nat_gateway_enabled                  = optional(bool, true)
+    nat_gateway_mode                     = optional(string, "single")
+    ami_id                               = optional(string)
+    ssh_key_name                         = optional(string)
+    instance_profile_name                = optional(string)
+    bootstrap_template_path              = optional(string)
+    security_profile                     = optional(string, "kubespray-default")
+    ssh_access_mode                      = optional(string, "cidr_allowlist")
+    admin_ingress_cidrs                  = optional(list(string), [])
+    kube_api_access_mode                 = optional(string, "private_only")
+    kube_api_ingress_cidrs               = optional(list(string), [])
+    cluster_internal_cidrs               = optional(list(string), [])
   })
   nullable = false
+
+  validation {
+    condition = (
+      trimspace(var.aws_cluster.region) != "" &&
+      trimspace(var.aws_cluster.account_id) != "" &&
+      contains(["create", "reference"], var.aws_cluster.network_mode) &&
+      (
+        var.aws_cluster.network_mode == "create" ?
+        (
+          can(cidrhost(var.aws_cluster.vpc_cidr, 0)) &&
+          length(var.aws_cluster.availability_zones) > 0 &&
+          length(var.aws_cluster.control_plane_subnet_cidrs) > 0 &&
+          alltrue([for cidr in var.aws_cluster.control_plane_subnet_cidrs : can(cidrhost(cidr, 0))]) &&
+          length(var.aws_cluster.worker_subnet_cidrs) > 0 &&
+          alltrue([for cidr in var.aws_cluster.worker_subnet_cidrs : can(cidrhost(cidr, 0))]) &&
+          length(var.aws_cluster.public_load_balancer_subnet_cidrs) > 0 &&
+          alltrue([for cidr in var.aws_cluster.public_load_balancer_subnet_cidrs : can(cidrhost(cidr, 0))])
+        ) :
+        (
+          trimspace(try(var.aws_cluster.vpc_id, "")) != "" &&
+          length(var.aws_cluster.control_plane_subnet_ids) > 0 &&
+          alltrue([for subnet_id in var.aws_cluster.control_plane_subnet_ids : trimspace(subnet_id) != ""]) &&
+          length(var.aws_cluster.worker_subnet_ids) > 0 &&
+          alltrue([for subnet_id in var.aws_cluster.worker_subnet_ids : trimspace(subnet_id) != ""]) &&
+          length(var.aws_cluster.public_load_balancer_subnet_ids) > 0 &&
+          alltrue([for subnet_id in var.aws_cluster.public_load_balancer_subnet_ids : trimspace(subnet_id) != ""])
+        )
+      ) &&
+      trimspace(var.aws_cluster.control_plane_instance_type) != "" &&
+      trimspace(var.aws_cluster.worker_instance_type) != "" &&
+      var.aws_cluster.control_plane_root_volume_gbs > 0 &&
+      var.aws_cluster.worker_root_volume_gbs > 0 &&
+      trimspace(var.aws_cluster.storage_class) != "" &&
+      contains(["single"], var.aws_cluster.nat_gateway_mode) &&
+      contains(["private_only", "public_allowlist"], var.aws_cluster.control_plane_endpoint_access_intent) &&
+      contains(["private-subnets", "public-subnets", "mixed"], var.aws_cluster.control_plane_placement_intent) &&
+      contains(["private-subnets", "public-subnets", "mixed"], var.aws_cluster.worker_placement_intent) &&
+      contains(["kubespray-default"], var.aws_cluster.security_profile) &&
+      contains(["none", "cidr_allowlist"], var.aws_cluster.ssh_access_mode) &&
+      contains(["private_only", "public_allowlist"], var.aws_cluster.kube_api_access_mode) &&
+      (
+        var.aws_cluster.ssh_access_mode != "cidr_allowlist" ||
+        length(var.aws_cluster.admin_ingress_cidrs) > 0
+      ) &&
+      (
+        var.aws_cluster.kube_api_access_mode != "public_allowlist" ||
+        length(var.aws_cluster.kube_api_ingress_cidrs) > 0
+      ) &&
+      (
+        length(var.aws_cluster.cluster_internal_cidrs) > 0 &&
+        alltrue([for cidr in var.aws_cluster.cluster_internal_cidrs : can(cidrhost(cidr, 0))])
+      ) &&
+      alltrue([for cidr in var.aws_cluster.admin_ingress_cidrs : can(cidrhost(cidr, 0))]) &&
+      alltrue([for cidr in var.aws_cluster.kube_api_ingress_cidrs : can(cidrhost(cidr, 0))])
+    )
+    error_message = "aws_cluster must define provider identifiers, a supported network_mode, valid create/reference network inputs, positive volume sizes, instance types, storage, supported NAT/intent/access values, and valid internal/admin/API CIDRs."
+  }
+}
+
+variable "aws_dev_scheduler" {
+  description = "Optional AWS dev capacity scheduler settings for the infrastructure skeleton."
+  type = object({
+    enabled        = bool
+    target_scope   = string
+    start_schedule = string
+    stop_schedule  = string
+  })
+  default  = null
+  nullable = true
+
+  validation {
+    condition = (
+      var.aws_dev_scheduler == null ||
+      contains(["workers_only", "include_control_plane", "disabled"], var.aws_dev_scheduler.target_scope)
+    )
+    error_message = "aws_dev_scheduler.target_scope must be workers_only, include_control_plane, or disabled."
+  }
 }
