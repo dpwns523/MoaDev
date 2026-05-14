@@ -6,6 +6,51 @@ If a section does not apply, write `None`.
 
 ---
 
+## Release: `helm-release-boundaries-scaffold`
+
+- Date: `2026-05-04`
+- Status: `planned`
+- Owner: `repository-maintainers`
+
+### Summary
+
+Added the first `platform/helm/moadev` chart scaffold with explicit release boundaries for `web`, `api`, and `agents-runtime`, plus values layering for OCI, AWS dev, and AWS prod overrides.
+
+### User Impact
+
+- Who is affected: contributors and operators preparing the first Kubernetes deployment baseline
+- What users will notice: the repository now includes a concrete Helm chart structure, provider/environment override files, and a consistent contract for image coordinates, ingress hosts, and workload-level environment wiring
+- Expected benefits: smaller follow-up diffs for issue `#16`, a clearer handoff from Terraform contract fields into chart values, and less ambiguity around which Kubernetes objects belong to each application workload
+
+### Migration Notes
+
+- Required upgrade steps: provide Kubernetes Secrets for application runtime configuration before deploying the chart into a real cluster
+- Data or config changes: Helm values now assume existing secret references for application secrets instead of embedding secret values in tracked files
+- Operator actions: map `DATABASE_URL`, `MOADEV_INTERNAL_AUTH_SECRET`, and OAuth provider credentials into cluster secrets, then choose the appropriate override file for OCI, AWS dev, or AWS prod rendering
+
+### New Env Vars
+
+| Name | Required | Default | Description |
+|------|----------|---------|-------------|
+| `None` | no | none | No new process environment variables were introduced; the new chart references existing application env contracts through Kubernetes Secret keys. |
+
+### Breaking Changes
+
+- None for local app execution. The new chart establishes a Kubernetes deployment contract but does not change the existing root development commands.
+
+### Rollback Notes
+
+- Rollback trigger: the initial chart boundaries prove too opinionated for follow-up Helm or GitOps work
+- Rollback steps: remove `platform/helm/moadev` and revert the release-note entry so the repository returns to Terraform-only platform scaffolding
+- Data recovery notes: none
+
+### Known Issues
+
+- The chart intentionally stops short of Argo CD wiring, Kubespray inventory generation, NetworkPolicy resources, and stateful PostgreSQL or Redis deployment logic.
+- Workload secrets are referenced by name and key only; secret creation and rotation remain follow-up operator concerns.
+
+---
+
 ## Release: `terraform-foundation-security-boundaries`
 
 - Date: `2026-05-03`
