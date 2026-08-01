@@ -195,7 +195,7 @@ Claude는 **Task 도구**를 사용해 `.claude/agents/`에 정의된 서브에�
 
 ### `reviewer` (리뷰어)
 - **사용 시점**: 코드 작성/수정 후. PR 오픈 전.
-- **모델**: claude-sonnet-4-6
+- **모델**: claude-opus-4-7
 - **리턴**: 심각도별 발견 사항 (CRITICAL / HIGH / MEDIUM / LOW)
 
 ### `docs-researcher` (문서 연구원)
@@ -205,7 +205,7 @@ Claude는 **Task 도구**를 사용해 `.claude/agents/`에 정의된 서브에�
 
 ### `platform-engineer` (플랫폼 엔지니어)
 - **사용 시점**: Helm, Argo CD, Terraform, Kubernetes 변경 시
-- **모델**: claude-sonnet-4-6
+- **모델**: claude-opus-4-7
 - **리턴**: 폭발 반경 평가 + 심각도별 인프라 리뷰
 
 ### `observability-reviewer` (관측성 리뷰어)

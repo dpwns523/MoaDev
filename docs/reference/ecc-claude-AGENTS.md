@@ -11,7 +11,7 @@ This supplements the root `CLAUDE.md` with Claude Code-specific guidance.
 | Debugging, refactoring | claude-sonnet-4-6 |
 | Security review | claude-sonnet-4-6 |
 | Fast lookups, simple transforms | claude-haiku-4-5-20251001 |
-| Highest-stakes decisions | claude-opus-4-6 |
+| Highest-stakes decisions | claude-opus-4-7 |
 
 ## Skills Discovery
 
@@ -68,7 +68,7 @@ Available subagents:
 | Hooks | 8+ event types (PreToolUse, PostToolUse, etc.) | Not supported |
 | MCP | Full support | `config.toml` + `codex mcp add` |
 | Settings | `.claude/settings.json` | `.codex/config.toml` |
-| Models | claude-sonnet-4-6 / opus-4-6 / haiku-4-5 | gpt-5.4 |
+| Models | claude-sonnet-4-6 / opus-4-7 / haiku-4-5 | gpt-5.4 |
 
 ## Claude Code Hooks
 

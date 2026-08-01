@@ -189,7 +189,7 @@ All subagents are read-only by default — they report findings and do not make 
 
 ### `reviewer`
 - **When**: After writing or modifying code. Before opening a PR.
-- **Model**: claude-sonnet-4-6
+- **Model**: claude-opus-4-7
 - **Returns**: Severity-rated findings (CRITICAL / HIGH / MEDIUM / LOW)
 
 ### `docs-researcher`
@@ -199,7 +199,7 @@ All subagents are read-only by default — they report findings and do not make 
 
 ### `platform-engineer`
 - **When**: Helm, Argo CD, Terraform, or Kubernetes changes.
-- **Model**: claude-sonnet-4-6
+- **Model**: claude-opus-4-7
 - **Returns**: Blast radius assessment + severity-rated infra review
 
 ### `observability-reviewer`
