@@ -34,6 +34,7 @@ npm-debug.log*
 
 # Python
 .venv/
+venv/
 __pycache__/
 .pytest_cache/
 .ruff_cache/
@@ -53,6 +54,7 @@ htmlcov/
 # Editor/IDE
 # .idea/
 # .vscode/
+.DS_Store
 
 # Claude Code — scripts below are session helpers, not part of the repo
 scripts/install-claude-config.sh
