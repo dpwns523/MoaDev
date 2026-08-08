@@ -86,33 +86,15 @@ Understanding what persists helps you compact with confidence:
 ## Token Optimization Patterns
 
 ### Trigger-Table Lazy Loading
-Instead of loading full skill content at session start, use a trigger table that maps keywords to skill paths. Skills load only when triggered, reducing baseline context by 50%+:
+Load skills only when their keywords come up, not all at session start:
 
 | Trigger | Skill | Load When |
 |---------|-------|-----------|
-| "test", "tdd", "coverage" | tdd-workflow | User mentions testing |
 | "security", "auth", "xss" | security-review | Security-related work |
 | "deploy", "ci/cd" | deployment-patterns | Deployment context |
 
 ### Context Composition Awareness
-Monitor what's consuming your context window:
-- **AGENTS.md files** — Always loaded, keep lean
-- **Loaded skills** — Each skill adds 1-5K tokens
-- **Conversation history** — Grows with each exchange
-- **Tool results** — File reads, search results add bulk
+Monitor what's consuming your context window: `CLAUDE.md`/`AGENTS.md` (always loaded, keep lean), loaded skills (each adds a few K tokens), conversation history, and tool results.
 
 ### Duplicate Instruction Detection
-Common sources of duplicate context:
-- Same rules repeated between root and nested `AGENTS.md` files
-- Skills that repeat `AGENTS.md` instructions
-- Multiple skills covering overlapping domains
-
-### Context Optimization Tools
-- `token-optimizer` MCP — Automated 95%+ token reduction via content deduplication
-- `context-mode` — Context virtualization (315KB to 5.4KB demonstrated)
-
-## Related
-
-- [The Longform Guide](https://x.com/affaanmustafa/status/2014040193557471352) — Token optimization section
-- Memory persistence hooks — For state that survives compaction
-- `continuous-learning` skill — Extracts patterns before session ends
+Common sources of duplicate context: the same rule repeated between root and nested instruction files, a skill that repeats `CLAUDE.md` instructions, or multiple skills covering overlapping domains.

@@ -20,63 +20,42 @@ docs/                  — Project documentation
 
 ## Core Principles
 
-1. **Agent-First** — Delegate to specialized subagents for domain tasks
-2. **Test-Driven** — Write tests before implementation; 80%+ coverage required
-3. **Security-First** — Never compromise on security; validate all inputs
-4. **Immutability** — Always create new objects, never mutate existing ones
-5. **Plan Before Execute** — Plan complex features before writing code
+1. **Security-First** — Never compromise on security; validate all inputs
+2. **Immutability** — Always create new objects, never mutate existing ones
+3. **Tests as default** — This repo's convention is tests-first with ~80% coverage; deviate with justification, not silently
+4. **Delegate deliberately** — Use a subagent when the task needs parallel exploration, an isolated context window, or a distinct tool-permission boundary. For small or sequential work, just do it directly.
 
 ## Available Subagents
 
-Use the Task tool to spawn subagents defined in `.claude/agents/`:
+Spawn via the Task tool from `.claude/agents/` when delegation genuinely helps (see Core Principles above) — not as a fixed step for every task.
 
-| Agent | Purpose | When to Use |
-|-------|---------|-------------|
-| explorer | Read-only codebase exploration | Before any edit — gather evidence |
-| reviewer | Correctness, security, regression review | After writing/modifying code |
-| docs-researcher | API and framework doc verification | Verify behavior before implementing |
-| platform-engineer | Kubernetes, Helm, Terraform, Argo CD | Infrastructure changes |
-| observability-reviewer | Metrics, logs, traces, dashboards | Telemetry and monitoring changes |
-| release-manager | CI/CD, GitOps, release notes | Release and deployment workflows |
-
-### Agent Orchestration
-
-Spawn agents proactively — don't wait for the user to ask:
-- Complex feature requests → **explorer** first, then implement
-- Code just written/modified → **reviewer**
-- Bug fix or new feature → use tdd-workflow skill
-- Architectural decision → **explorer** + **docs-researcher** in parallel
-- Security-sensitive code → **reviewer** with security focus
-- Platform/infra changes → **platform-engineer**
-- Monitoring changes → **observability-reviewer**
-- Release prep → **release-manager**
-
-Use **parallel execution** for independent operations — spawn multiple agents simultaneously.
+| Agent | Purpose |
+|-------|---------|
+| explorer | Read-only codebase/doc research — evidence gathering, API/framework behavior verification |
+| reviewer | Correctness, security, regression, and test-coverage review |
+| platform-engineer | Kubernetes, Helm, Terraform, Argo CD |
+| observability-reviewer | Metrics, logs, traces, dashboards, alerts |
+| release-manager | CI/CD, GitOps, release notes |
 
 ## Skills
 
-Skills are located in `.agents/skills/`. Each skill contains a `SKILL.md` with detailed instructions. Activate the relevant skill by reading its `SKILL.md` before executing the workflow.
+Skills live in `.agents/skills/`, each with a `SKILL.md`. Read one when its purpose matches the current task — they hold project-specific information you can't derive from the codebase alone, not general coding advice.
 
 | Skill | Path | Purpose |
 |-------|------|---------|
-| tdd-workflow | `.agents/skills/tdd-workflow/` | TDD with 80%+ coverage |
-| security-review | `.agents/skills/security-review/` | Security checklist and patterns |
-| verification-loop | `.agents/skills/verification-loop/` | Build, test, lint, typecheck |
-| coding-standards | `.agents/skills/coding-standards/` | Universal coding standards |
-| frontend-patterns | `.agents/skills/frontend-patterns/` | React/Next.js patterns |
-| backend-patterns | `.agents/skills/backend-patterns/` | API design, database, caching |
-| api-design | `.agents/skills/api-design/` | REST API design patterns |
-| python-patterns | `.agents/skills/python-patterns/` | Python development patterns |
-| python-testing | `.agents/skills/python-testing/` | Python testing practices |
-| database-migrations | `.agents/skills/database-migrations/` | DB migration patterns |
-| e2e-testing | `.agents/skills/e2e-testing/` | Playwright E2E tests |
-| deployment-patterns | `.agents/skills/deployment-patterns/` | Deployment best practices |
-| docker-patterns | `.agents/skills/docker-patterns/` | Docker patterns |
-| issue-driven-planning | `.agents/skills/issue-driven-planning/` | Issue-driven workflow |
+| issue-driven-planning | `.agents/skills/issue-driven-planning/` | Issue-driven workflow conventions |
+| security-review | `.agents/skills/security-review/` | Security checks specific to this stack |
+| verification-loop | `.agents/skills/verification-loop/` | Build/test/lint loop mechanics |
+| database-migrations | `.agents/skills/database-migrations/` | Alembic conventions for this repo |
+| e2e-testing | `.agents/skills/e2e-testing/` | Playwright setup and test infra facts |
+| deployment-patterns | `.agents/skills/deployment-patterns/` | This repo's deploy topology/env facts |
+| docker-patterns | `.agents/skills/docker-patterns/` | Base images and registry conventions used here |
+| eval-harness | `.agents/skills/eval-harness/` | Agent evaluation harness mechanics |
+| search-first | `.agents/skills/search-first/` | Repo-specific search-tool facts |
+| cost-aware-llm-pipeline | `.agents/skills/cost-aware-llm-pipeline/` | LLM pipeline cost/model-selection guidance |
+| strategic-compact | `.agents/skills/strategic-compact/` | Context-compaction mechanics |
 
 ## Slash Commands
-
-Use these Claude Code slash commands for common workflows:
 
 - `/tdd` — Activate TDD workflow
 - `/verify` — Run verification loop (build, test, lint, types, security)
@@ -87,61 +66,38 @@ Use these Claude Code slash commands for common workflows:
 
 **Before ANY commit:**
 - No hardcoded secrets (API keys, passwords, tokens)
-- All user inputs validated (use Zod for TypeScript, Pydantic for Python)
-- SQL injection prevention (parameterized queries only)
-- XSS prevention (sanitized HTML output)
-- CSRF protection enabled
-- Authentication/authorization verified
-- Rate limiting on all API endpoints
+- All user inputs validated (Zod for TypeScript, Pydantic for Python)
+- Parameterized queries only; sanitized HTML output
+- CSRF protection, auth/authz verified, rate limiting on all endpoints
 - Error messages don't leak sensitive data
 
-**Secret management:** NEVER hardcode secrets. Use environment variables or a secret manager. Validate required secrets at startup. Rotate any exposed secrets immediately.
+**Secrets:** never hardcode; use environment variables or a secret manager; validate required secrets at startup; rotate any exposed secret immediately, no exceptions.
 
-**If a security issue is found:** STOP → spawn **reviewer** agent → fix CRITICAL issues → rotate exposed secrets → review codebase for similar issues.
+**On a real finding:** fix CRITICAL issues before merging, and rotate any exposed secret right away — everything else is judgment on sequencing.
 
 ## Coding Style
 
 **Immutability (CRITICAL):** Always create new objects, never mutate. Return new copies with changes applied.
 
-**File organization:** Many small files over few large ones. 200–400 lines typical, 800 max. Organize by feature/domain, not by type. High cohesion, low coupling.
+**File organization:** Many small files over few large ones (200–400 lines typical, 800 max), organized by feature/domain.
 
-**Error handling:** Handle errors at every level. Provide user-friendly messages in UI code. Log detailed context server-side. Never silently swallow errors.
-
-**Input validation:** Validate all user input at system boundaries. Use schema-based validation (Zod / Pydantic). Fail fast with clear messages. Never trust external data.
-
-**Code quality checklist:**
-- Functions small (<50 lines), files focused (<800 lines)
-- No deep nesting (>4 levels)
-- Proper error handling, no hardcoded values
-- Readable, well-named identifiers
+**Error handling & validation:** Handle errors at every level; log detail server-side, keep UI messages friendly; validate all input at system boundaries with schema-based validation (Zod/Pydantic); never trust external data.
 
 ## Testing Requirements
 
-**Minimum coverage: 80%**
+Unit, integration, and E2E (Playwright) tests are all expected for non-trivial changes, at ~80% coverage. TDD (test first, minimal implementation, refactor) is this repo's default workflow — use `/tdd` for a fuller pass.
 
-Test types (all required):
-1. **Unit tests** — Individual functions, utilities, components
-2. **Integration tests** — API endpoints, database operations
-3. **E2E tests** — Critical user flows (Playwright)
-
-**TDD workflow (mandatory):**
-1. Write test first (RED) — test should FAIL
-2. Write minimal implementation (GREEN) — test should PASS
-3. Refactor (IMPROVE) — verify coverage ≥ 80%
-
-Run tests: `make test` or per-service `npm test` / `pytest`
+Run tests: `make test` or per-service `npm test` / `pytest`.
 
 ## Development Workflow
 
-1. **Explore** — Spawn **explorer** agent to gather codebase evidence
-2. **Plan** — Identify dependencies and risks, break into phases
-3. **TDD** — Write tests first, implement, refactor (use `/tdd` command)
-4. **Review** — Spawn **reviewer** agent; address CRITICAL/HIGH issues immediately
-5. **Verify** — Run `/verify` before opening PR
-6. **Capture knowledge** in the right place:
-   - Team/project knowledge (architecture decisions, API changes, runbooks) → `docs/`
-   - If no obvious doc location, ask before creating new top-level files
-7. **Commit** — Conventional commits format, comprehensive PR summaries
+1. Understand the change — read the relevant code directly, or delegate to `explorer` if it needs parallel/isolated research
+2. Plan non-trivial work before writing code
+3. Implement, test-first by default
+4. Review before opening a PR — delegate to `reviewer` for non-trivial changes; use judgment for small ones
+5. `/verify` before opening a PR
+6. Capture durable project knowledge in `docs/`; ask before creating new top-level files if there's no obvious location
+7. Commit with conventional commit format; write a comprehensive PR summary
 
 ## Git Workflow
 
@@ -150,13 +106,15 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`
 
 **PR workflow:** Analyze full commit history → draft comprehensive summary → include test plan → push with `-u` flag.
 
+**Language:** Always write GitHub-facing content (PR titles/descriptions, issue titles/bodies, PR comments) in Korean. Commit messages stay in English per the format above.
+
 ## Architecture Patterns
 
 **API response format (FastAPI):** Consistent envelope with `success`, `data`, `error`, and `meta` fields.
 
-**Repository pattern:** Encapsulate data access behind standard interface (`list`, `get`, `create`, `update`, `delete`). Business logic depends on abstract interface, not storage mechanism.
+**Repository pattern:** Encapsulate data access behind a standard interface (`list`, `get`, `create`, `update`, `delete`); business logic depends on the abstract interface, not the storage mechanism.
 
-**Agents runtime:** The `services/agents-runtime/` service orchestrates AI agent workflows. Prefer stateless handlers, idempotent operations, and explicit retry logic.
+**Agents runtime:** `services/agents-runtime/` orchestrates AI agent workflows. Prefer stateless handlers, idempotent operations, explicit retry logic.
 
 ## Make Targets
 
@@ -171,16 +129,10 @@ make verify      # Full verification: lint + typecheck + test + tf-validate
 make format      # Format code (Prettier, Ruff, Terraform)
 ```
 
-## Performance
+## Context Management
 
-**Context management:** Avoid last 20% of context window for large refactoring and multi-file features. Lower-sensitivity tasks (single edits, docs, simple fixes) tolerate higher utilization.
+Avoid the last 20% of context window for large refactors and multi-file features; docs/simple fixes tolerate higher utilization. When troubleshooting a build, fix one error category at a time and verify after each fix.
 
-**Build troubleshooting:** Analyze errors incrementally — fix one category at a time, verify after each fix.
+## Adding to This Harness
 
-## Success Metrics
-
-- All tests pass with 80%+ coverage
-- No security vulnerabilities
-- Code is readable and maintainable
-- Performance is acceptable
-- User requirements are met
+Before adding a skill, agent, or checklist item, ask: *is this information the model can't derive from the codebase, training knowledge, or plain reasoning — and would getting it wrong actually break something (correctness, security, compliance)?* If it's generic best-practice coaching or a style preference a frontier model already applies, don't add it.
