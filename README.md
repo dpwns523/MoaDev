@@ -49,12 +49,25 @@ make verify
 - `e2e` - end-to-end flows
 - `scripts` - local automation
 
-## Codex usage
+## AI agent usage
+
+MoaDev supports both **Claude Code** and **Codex CLI**.
+
+### Claude Code
+
+- Root instructions: `CLAUDE.md` (auto-loaded)
+- Subagents: `.claude/agents/` (`explorer`, `reviewer`, `docs-researcher`, `platform-engineer`, `observability-reviewer`, `release-manager`)
+- Slash commands: `.claude/commands/` (`/tdd`, `/verify`, `/security`, `/platform`)
+- Skills: `.agents/skills/`
+- Full guide: `docs/claude-code-guide.md` · `docs/claude-code-guide.ko.md`
+
+### Codex CLI
 
 - Root instructions: `AGENTS.md`
 - Folder-specific rules: `AGENTS.override.md`
 - Skills: `.agents/skills/`
 - Subagents: `.codex/agents/`
+- Reference: `docs/reference/ecc-codex-AGENTS.md`
 
 ## Commands
 

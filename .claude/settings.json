@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make:*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git status*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(npm run*)",
+      "Bash(npm test*)",
+      "Bash(npm install)",
+      "Bash(npm ci)",
+      "Bash(npx*)",
+      "Bash(pytest*)",
+      "Bash(pip install*)",
+      "Bash(python*)",
+      "Bash(ruff*)",
+      "Bash(mypy*)",
+      "Bash(terraform*)",
+      "Bash(helm*)",
+      "Bash(kubectl*)",
+      "Bash(docker*)",
+      "Bash(grep*)",
+      "Bash(find*)",
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(echo*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(curl * | bash*)",
+      "Bash(wget * | bash*)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "8096"
+  }
+}
