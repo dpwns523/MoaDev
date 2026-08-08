@@ -1,0 +1,22 @@
+global:
+  labels:
+    topology.moadev.io/provider: oci
+
+web:
+  replicaCount: 1
+  ingress:
+    host: app.oci.moadev.example.invalid
+  nodeSelector:
+    workload.moadev.io/node-group: oci-workers
+
+api:
+  replicaCount: 1
+  ingress:
+    host: api.oci.moadev.example.invalid
+  nodeSelector:
+    workload.moadev.io/node-group: oci-workers
+
+agentsRuntime:
+  replicaCount: 1
+  nodeSelector:
+    workload.moadev.io/node-group: oci-workers

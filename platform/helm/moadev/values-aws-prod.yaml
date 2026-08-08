@@ -1,0 +1,23 @@
+global:
+  labels:
+    topology.moadev.io/environment: prod
+    topology.moadev.io/provider: aws
+
+web:
+  replicaCount: 2
+  ingress:
+    host: app.moadev.example.invalid
+  nodeSelector:
+    workload.moadev.io/node-group: aws-workers
+
+api:
+  replicaCount: 2
+  ingress:
+    host: api.moadev.example.invalid
+  nodeSelector:
+    workload.moadev.io/node-group: aws-workers
+
+agentsRuntime:
+  replicaCount: 2
+  nodeSelector:
+    workload.moadev.io/node-group: aws-workers

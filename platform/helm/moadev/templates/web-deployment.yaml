@@ -1,0 +1,76 @@
+{{- $component := .Values.web -}}
+{{- if $component.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "moadev.componentFullname" (dict "root" . "component" "web") }}
+  labels:
+    {{- include "moadev.labels" (dict "root" . "component" "web") | nindent 4 }}
+spec:
+  replicas: {{ $component.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "moadev.selectorLabels" (dict "root" . "component" "web") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "moadev.selectorLabels" (dict "root" . "component" "web") | nindent 8 }}
+      {{- $annotations := merge (deepCopy .Values.global.podAnnotations) ($component.podAnnotations | default dict) }}
+      {{- if $annotations }}
+      annotations:
+        {{- toYaml $annotations | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.global.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml $component.podSecurityContext | nindent 8 }}
+      containers:
+        - name: web
+          image: {{ include "moadev.image" (dict "root" . "componentValues" $component) }}
+          imagePullPolicy: {{ $component.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $component.containerPort }}
+              protocol: TCP
+          {{- $apiBaseURL := get $component.env "MOADEV_API_BASE_URL" | default (printf "http://%s:%v" (include "moadev.componentFullname" (dict "root" . "component" "api")) .Values.api.service.port) }}
+          env:
+            - name: MOADEV_API_BASE_URL
+              value: {{ $apiBaseURL | quote }}
+            {{- include "moadev.renderEnv" (dict "root" . "component" "web" "componentValues" $component "excludeKeys" (list "MOADEV_API_BASE_URL")) | nindent 12 }}
+          securityContext:
+            {{- toYaml $component.containerSecurityContext | nindent 12 }}
+          resources:
+            {{- toYaml $component.resources | nindent 12 }}
+          {{- if $component.probes.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ $component.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ $component.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ $component.probes.readiness.periodSeconds }}
+          livenessProbe:
+            httpGet:
+              path: {{ $component.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ $component.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ $component.probes.liveness.periodSeconds }}
+          {{- end }}
+      {{- $nodeSelector := default .Values.global.nodeSelector $component.nodeSelector }}
+      {{- if $nodeSelector }}
+      nodeSelector:
+        {{- toYaml $nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- $affinity := default .Values.global.affinity $component.affinity }}
+      {{- if $affinity }}
+      affinity:
+        {{- toYaml $affinity | nindent 8 }}
+      {{- end }}
+      {{- $tolerations := default .Values.global.tolerations $component.tolerations }}
+      {{- if $tolerations }}
+      tolerations:
+        {{- toYaml $tolerations | nindent 8 }}
+      {{- end }}
+{{- end }}

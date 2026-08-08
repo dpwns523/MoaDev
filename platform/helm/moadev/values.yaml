@@ -1,0 +1,174 @@
+global:
+  nameOverride: ""
+  fullnameOverride: ""
+  imageRegistry: ghcr.io/dpwns523/moadev
+  imageTag: latest
+  imagePullSecrets: []
+  labels: {}
+  podAnnotations: {}
+  ingress:
+    className: nginx
+    annotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+web:
+  enabled: true
+  replicaCount: 2
+  labels: {}
+  podAnnotations: {}
+  image:
+    repository: web
+    tag: ""
+    pullPolicy: IfNotPresent
+  containerPort: 3000
+  service:
+    type: ClusterIP
+    port: 3000
+  env:
+    NEXT_TELEMETRY_DISABLED: "1"
+  existingSecretName: ""
+  secretEnv:
+    AUTH_SECRET: AUTH_SECRET
+    AUTH_GOOGLE_ID: AUTH_GOOGLE_ID
+    AUTH_GOOGLE_SECRET: AUTH_GOOGLE_SECRET
+    AUTH_KAKAO_ID: AUTH_KAKAO_ID
+    AUTH_KAKAO_SECRET: AUTH_KAKAO_SECRET
+    AUTH_NAVER_ID: AUTH_NAVER_ID
+    AUTH_NAVER_SECRET: AUTH_NAVER_SECRET
+    MOADEV_INTERNAL_AUTH_SECRET: MOADEV_INTERNAL_AUTH_SECRET
+  ingress:
+    enabled: true
+    host: app.moadev.example.invalid
+    path: /
+    pathType: Prefix
+    annotations: {}
+    tls: []
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  podSecurityContext:
+    runAsNonRoot: true
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  probes:
+    enabled: true
+    readiness:
+      path: /login
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      path: /login
+      initialDelaySeconds: 15
+      periodSeconds: 20
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+api:
+  enabled: true
+  replicaCount: 2
+  labels: {}
+  podAnnotations: {}
+  image:
+    repository: api
+    tag: ""
+    pullPolicy: IfNotPresent
+  containerPort: 8000
+  service:
+    type: ClusterIP
+    port: 8000
+  env:
+    MOADEV_INTERNAL_AUTH_MAX_AGE_SECONDS: "300"
+    PYTHONUNBUFFERED: "1"
+  existingSecretName: ""
+  secretEnv:
+    DATABASE_URL: DATABASE_URL
+    MOADEV_INTERNAL_AUTH_SECRET: MOADEV_INTERNAL_AUTH_SECRET
+  ingress:
+    enabled: true
+    host: api.moadev.example.invalid
+    path: /
+    pathType: Prefix
+    annotations: {}
+    tls: []
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  podSecurityContext:
+    runAsNonRoot: true
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  probes:
+    enabled: true
+    readiness:
+      path: /health
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      path: /health
+      initialDelaySeconds: 15
+      periodSeconds: 20
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+agentsRuntime:
+  enabled: true
+  replicaCount: 1
+  labels: {}
+  podAnnotations: {}
+  image:
+    repository: agents-runtime
+    tag: ""
+    pullPolicy: IfNotPresent
+  env:
+    AGENTS_RUNTIME_LOG_LEVEL: INFO
+    AGENTS_RUNTIME_MAX_BATCH_SIZE: "3"
+    AGENTS_RUNTIME_POLL_INTERVAL_SECONDS: "30"
+    AGENTS_RUNTIME_RUN_ONCE: "false"
+    AGENTS_RUNTIME_SIGNALS_JSON: "[]"
+  existingSecretName: ""
+  secretEnv: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  podSecurityContext:
+    runAsNonRoot: true
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+postgres:
+  enabled: false
+
+redis:
+  enabled: false
+
+monitoring:
+  serviceMonitor:
+    enabled: false
