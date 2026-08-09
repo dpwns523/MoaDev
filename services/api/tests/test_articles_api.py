@@ -270,6 +270,82 @@ def test_article_processing_status_endpoint_returns_explicit_state(monkeypatch, 
     }
 
 
+def test_article_detail_renders_geeknews_pipeline_output_contract(
+    monkeypatch, tmp_path: Path
+) -> None:
+    """AC-5: the detail API renders agents-runtime's GeekNews pipeline output.
+
+    Seeds a row shaped exactly like ``services/agents-runtime/app/pipeline.py``'s
+    ``run_pipeline`` produces on the success path — one SourceRegistryEntry
+    (slug=geeknews), one PUBLISHED Article, exactly one ArticleSegment at
+    position=0 with a pass-through translation (translated_text ==
+    original_text), and one ArticleStructuredOutput row whose summary matches
+    the deterministic ``generate_summary`` template — then asserts the
+    existing authenticated detail endpoint renders it via
+    ``build_structured_output``.
+    """
+    database_url = f"sqlite+pysqlite:///{tmp_path / 'geeknews-pipeline-output.sqlite3'}"
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    monkeypatch.setenv("MOADEV_INTERNAL_AUTH_SECRET", TEST_INTERNAL_AUTH_SECRET)
+
+    engine = get_engine(database_url)
+    Base.metadata.drop_all(engine)
+    Base.metadata.create_all(engine)
+
+    title = "GeekNews 파이프라인 스캐폴드 공개"
+    original_text = "GeekNews 소스 최초 기사 본문입니다."
+
+    session = Session(engine)
+    try:
+        source = SourceRegistryEntry(
+            slug="geeknews",
+            display_name="GeekNews",
+            base_url="https://news.hada.io",
+            default_language="ko",
+        )
+        article = Article(
+            source=source,
+            external_id="https://news.hada.io/topic?id=10001",
+            canonical_url="https://news.hada.io/topic?id=10001",
+            title=title,
+            published_at=datetime(2026, 6, 1, 10, 0, tzinfo=timezone.utc),
+            ingested_at=datetime(2026, 6, 1, 10, 5, tzinfo=timezone.utc),
+            status=ArticleProcessingStatus.PUBLISHED,
+        )
+        article.segments.append(
+            ArticleSegment(
+                position=0,
+                original_text=original_text,
+                translated_text=original_text,
+            )
+        )
+        article.structured_output = ArticleStructuredOutput(
+            summary=f"{title} 요약 - 자동 생성된 예시 요약",
+        )
+        session.add(article)
+        session.commit()
+        article_id = article.id
+    finally:
+        session.close()
+
+    response = client.get(
+        f"/api/v1/articles/{article_id}",
+        headers=build_auth_headers(),
+    )
+
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["processing"]["status"] == "published"
+    assert data["segments"] == [
+        {
+            "position": 0,
+            "original_text": original_text,
+            "translated_text": original_text,
+        }
+    ]
+    assert data["structured_output"]["summary"] == f"{title} 요약 - 자동 생성된 예시 요약"
+
+
 def test_article_detail_returns_not_found_for_unknown_article(monkeypatch, tmp_path: Path) -> None:
     configure_article_api(monkeypatch, tmp_path)
 
