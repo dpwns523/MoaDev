@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 import json
 import logging
 import os
 import signal
 import threading
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional, Sequence
+from typing import Any, Callable
 
 from app.runtime import RuntimeBatchPlan, RuntimeSignal, plan_runtime_batch
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ class WorkerConfig:
     run_once: bool = False
 
 
-def load_worker_config(environ: Optional[Mapping[str, str]] = None) -> WorkerConfig:
+def load_worker_config(environ: Mapping[str, str] | None = None) -> WorkerConfig:
     env = os.environ if environ is None else environ
 
     max_batch_size = _parse_positive_int(
@@ -46,7 +48,7 @@ def load_worker_config(environ: Optional[Mapping[str, str]] = None) -> WorkerCon
     )
 
 
-def load_seed_signals(environ: Optional[Mapping[str, str]] = None) -> tuple[RuntimeSignal, ...]:
+def load_seed_signals(environ: Mapping[str, str] | None = None) -> tuple[RuntimeSignal, ...]:
     env = os.environ if environ is None else environ
     payload = env.get("AGENTS_RUNTIME_SIGNALS_JSON", "[]")
 
@@ -56,7 +58,7 @@ def load_seed_signals(environ: Optional[Mapping[str, str]] = None) -> tuple[Runt
         raise ValueError("AGENTS_RUNTIME_SIGNALS_JSON must contain valid JSON") from exc
 
     if not isinstance(raw_signals, list):
-        raise ValueError("AGENTS_RUNTIME_SIGNALS_JSON must decode to a list of objects")
+        raise TypeError("AGENTS_RUNTIME_SIGNALS_JSON must decode to a list of objects")
 
     return tuple(_parse_runtime_signal(raw_signal) for raw_signal in raw_signals)
 
@@ -75,8 +77,8 @@ def run_worker(
     *,
     config: WorkerConfig,
     emit_plan: PlanEmitter,
-    stop_event: Optional[threading.Event] = None,
-    wait_for_next_cycle: Optional[WaitForNextCycle] = None,
+    stop_event: threading.Event | None = None,
+    wait_for_next_cycle: WaitForNextCycle | None = None,
 ) -> int:
     shutdown_event = stop_event or threading.Event()
     wait = wait_for_next_cycle or _wait_for_next_cycle
@@ -121,7 +123,7 @@ def main() -> int:
     try:
         config = load_worker_config()
         seed_signals = load_seed_signals()
-    except ValueError as exc:
+    except (ValueError, TypeError) as exc:
         LOGGER.error("invalid agents-runtime configuration: %s", exc)
         return 2
 
@@ -152,7 +154,7 @@ def main() -> int:
 
 def _parse_runtime_signal(raw_signal: Any) -> RuntimeSignal:
     if not isinstance(raw_signal, dict):
-        raise ValueError("AGENTS_RUNTIME_SIGNALS_JSON entries must be objects")
+        raise TypeError("AGENTS_RUNTIME_SIGNALS_JSON entries must be objects")
 
     source = _require_string(raw_signal.get("source"), field_name="source")
     title = _require_string(raw_signal.get("title"), field_name="title")
@@ -160,7 +162,7 @@ def _parse_runtime_signal(raw_signal: Any) -> RuntimeSignal:
     raw_tags = raw_signal.get("tags", [])
 
     if not isinstance(raw_tags, list):
-        raise ValueError("AGENTS_RUNTIME_SIGNALS_JSON field 'tags' must be a list")
+        raise TypeError("AGENTS_RUNTIME_SIGNALS_JSON field 'tags' must be a list")
 
     return RuntimeSignal(
         source=source,
@@ -179,7 +181,7 @@ def _require_string(value: Any, *, field_name: str) -> str:
 
 def _require_int(value: Any, *, field_name: str) -> int:
     if not isinstance(value, int) or isinstance(value, bool):
-        raise ValueError(f"AGENTS_RUNTIME_SIGNALS_JSON field '{field_name}' must be an integer")
+        raise TypeError(f"AGENTS_RUNTIME_SIGNALS_JSON field '{field_name}' must be an integer")
 
     return value
 

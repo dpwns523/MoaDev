@@ -21,7 +21,6 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime
 from email.utils import parsedate_to_datetime
-from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -71,8 +70,8 @@ class FeedEntry:
     title: str
     canonical_url: str
     content: str
-    external_id: Optional[str] = None
-    published_at: Optional[datetime] = None
+    external_id: str | None = None
+    published_at: datetime | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -123,20 +122,20 @@ def fetch_feed(feed_url: str) -> list[FeedEntry]:
 
         # external_id from <id> element
         id_el = entry_el.find(f"{{{_ATOM_NS}}}id")
-        external_id: Optional[str] = (id_el.text or "").strip() if id_el is not None else None
+        external_id: str | None = (id_el.text or "").strip() if id_el is not None else None
 
         # published_at
-        published_at: Optional[datetime] = None
+        published_at: datetime | None = None
         published_el = entry_el.find(f"{{{_ATOM_NS}}}published")
         if published_el is not None and published_el.text:
             try:
                 published_at = parsedate_to_datetime(published_el.text)
-            except Exception:
+            except (TypeError, ValueError):
                 try:
                     published_at = datetime.fromisoformat(
                         published_el.text.replace("Z", "+00:00")
                     )
-                except Exception:
+                except (TypeError, ValueError):
                     published_at = None
 
         # content: prefer <content>, fall back to <summary>
@@ -224,8 +223,8 @@ def upsert_source_registry(session: Session) -> SourceRegistryEntry:
 
 def run_pipeline(
     session: Session,
-    feed_url: Optional[str] = None,
-) -> Optional[Article]:
+    feed_url: str | None = None,
+) -> Article | None:
     """Run the GeekNews ingestion/enrichment pipeline for exactly one article.
 
     The pipeline executes in two independent phases:
@@ -265,7 +264,8 @@ def run_pipeline(
     # Phase 2: Article intake/enrichment — single transaction.
     try:
         entries = fetch_feed(resolved_feed_url)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — any fetch/parse failure must
+        # transition to FAILED per AC-6, not just network errors.
         # Fetch failure: commit FAILED status in a single transaction.
         # Use a unique synthetic URL so the UniqueConstraint is never violated
         # across repeated failure runs.
@@ -285,7 +285,7 @@ def run_pipeline(
         return _detach_with_loaded_attributes(session, article)
 
     # Find first not-yet-published entry (idempotency check).
-    target: Optional[FeedEntry] = None
+    target: FeedEntry | None = None
     for entry in entries:
         existing = session.scalars(
             select(Article).where(

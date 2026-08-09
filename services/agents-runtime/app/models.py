@@ -86,8 +86,14 @@ class SourceRegistryEntry(Base):
         nullable=False,
         default=SourceRetentionMode.NORMALIZED_SEGMENTS,
     )
-    content_retention_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    policy_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # SQLAlchemy's declarative mapper resolves Mapped[...] annotations at
+    # runtime (even under `from __future__ import annotations`), so PEP 604
+    # `X | None` syntax here would break on Python 3.9 (requires-python
+    # >=3.9); Optional[...] is required for these columns specifically.
+    content_retention_days: Mapped[Optional[int]] = mapped_column(  # noqa: UP045
+        Integer, nullable=True
+    )
+    policy_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=now_utc
@@ -109,7 +115,7 @@ class SourceRegistryEntry(Base):
         return _normalize_required_string(key, value)
 
     @validates("content_retention_days")
-    def validate_content_retention_days(self, key: str, value: Optional[int]) -> Optional[int]:
+    def validate_content_retention_days(self, key: str, value: int | None) -> int | None:
         if value is None:
             return None
 
@@ -127,21 +133,23 @@ class Article(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
     source_id: Mapped[str] = mapped_column(ForeignKey("source_registry.id", ondelete="CASCADE"))
-    external_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    external_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # noqa: UP045
     canonical_url: Mapped[str] = mapped_column(String(2048), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
-    excerpt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    excerpt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045
+    published_at: Mapped[Optional[datetime]] = mapped_column(  # noqa: UP045
+        DateTime(timezone=True), nullable=True
+    )
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    category_slug: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    category_slug: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # noqa: UP045
     tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     status: Mapped[ArticleProcessingStatus] = mapped_column(
         build_enum(ArticleProcessingStatus, "article_processing_status"),
         nullable=False,
         default=ArticleProcessingStatus.PENDING_INTAKE,
     )
-    quality_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    status_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    quality_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045
+    status_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=now_utc
     )
@@ -158,7 +166,7 @@ class Article(Base):
         cascade="all, delete-orphan",
         order_by="ArticleSegment.position",
     )
-    structured_output: Mapped[Optional[ArticleStructuredOutput]] = relationship(
+    structured_output: Mapped[Optional[ArticleStructuredOutput]] = relationship(  # noqa: UP045
         back_populates="article",
         cascade="all, delete-orphan",
         uselist=False,
@@ -169,13 +177,13 @@ class Article(Base):
         return _normalize_required_string(key, value)
 
     @validates("category_slug")
-    def validate_optional_text(self, key: str, value: Optional[str]) -> Optional[str]:
+    def validate_optional_text(self, key: str, value: str | None) -> str | None:
         return _normalize_optional_string(key, value)
 
     @validates("tags")
     def validate_tags(self, key: str, value: list[Any]) -> list[str]:
         if not isinstance(value, list):
-            raise ValueError(f"{key} must be a list of strings.")
+            raise TypeError(f"{key} must be a list of strings.")
 
         normalized_tags: list[str] = []
         for item in value:
@@ -196,7 +204,7 @@ class ArticleSegment(Base):
     )
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     original_text: Mapped[str] = mapped_column(Text, nullable=False)
-    translated_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    translated_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=now_utc
     )
@@ -215,7 +223,7 @@ class ArticleSegment(Base):
         return _normalize_required_string(key, value)
 
     @validates("translated_text")
-    def validate_optional_text(self, key: str, value: Optional[str]) -> Optional[str]:
+    def validate_optional_text(self, key: str, value: str | None) -> str | None:
         return _normalize_optional_string(key, value)
 
 
@@ -256,12 +264,12 @@ class ArticleStructuredOutput(Base):
     @validates("glossary_entries", "concept_explanations", "related_concepts")
     def validate_object_lists(self, key: str, value: list[Any]) -> list[dict[str, str]]:
         if not isinstance(value, list):
-            raise ValueError(f"{key} must be a list.")
+            raise TypeError(f"{key} must be a list.")
 
         normalized_items: list[dict[str, str]] = []
         for item in value:
             if not isinstance(item, dict):
-                raise ValueError(f"{key} must contain only object entries.")
+                raise TypeError(f"{key} must contain only object entries.")
             normalized_items.append(
                 {str(dict_key): str(dict_value) for dict_key, dict_value in item.items()}
             )
@@ -271,7 +279,7 @@ class ArticleStructuredOutput(Base):
     @validates("quality_notes")
     def validate_quality_notes(self, key: str, value: list[Any]) -> list[str]:
         if not isinstance(value, list):
-            raise ValueError(f"{key} must be a list of strings.")
+            raise TypeError(f"{key} must be a list of strings.")
 
         normalized_notes: list[str] = []
         for item in value:
@@ -282,7 +290,7 @@ class ArticleStructuredOutput(Base):
 
 def _normalize_required_string(key: str, value: Any) -> str:
     if not isinstance(value, str):
-        raise ValueError(f"{key} must be a string.")
+        raise TypeError(f"{key} must be a string.")
 
     normalized_value = value.strip()
     if not normalized_value:
@@ -291,7 +299,7 @@ def _normalize_required_string(key: str, value: Any) -> str:
     return normalized_value
 
 
-def _normalize_optional_string(key: str, value: Any) -> Optional[str]:
+def _normalize_optional_string(key: str, value: Any) -> str | None:
     if value is None:
         return None
 

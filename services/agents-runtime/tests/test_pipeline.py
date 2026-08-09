@@ -396,7 +396,7 @@ def test_live_fetch_and_pipeline_published_status() -> None:
         entries = fetch_feed("https://news.hada.io/rss/news")
     except urllib.error.URLError as exc:
         pytest.skip(f"Network unavailable — skipping live test: {exc}")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — any live-fetch issue should skip, not fail CI
         pytest.skip(f"Feed fetch failed — skipping live test: {exc}")
 
     if not entries:
