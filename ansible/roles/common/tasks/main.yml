@@ -1,0 +1,10 @@
+---
+# Common host preparation for MoaDev AWS/OCI nodes.
+# Idempotent, sample-safe: no secrets, no environment-specific values.
+- name: Ensure base packages are present
+  ansible.builtin.package:
+    name:
+      - curl
+      - ca-certificates
+    state: present
+  become: true

@@ -1,0 +1,18 @@
+---
+# Dynamic AWS EC2 inventory for the "prod" environment.
+#
+# Added for structural parity with dev only (see hosts.yml in this
+# directory) — no start/stop playbook targets this environment.
+# AWS portion only; OCI prod workers are out of scope for this inventory.
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-west-2
+filters:
+  tag:environment: prod
+keyed_groups:
+  - key: tags.KubernetesRole
+    prefix: role
+  - key: tags.environment
+    prefix: env
+compose:
+  ansible_host: public_ip_address | default(private_ip_address)
