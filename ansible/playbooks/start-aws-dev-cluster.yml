@@ -10,26 +10,40 @@
 #     ansible/playbooks/start-aws-dev-cluster.yml
 #
 # Targets AWS dev workers only by default (safer default — never touches the
-# control-plane). Pass -e target_group=env_dev to include control-plane nodes.
+# control-plane). Pass -e include_control_plane=true to include it too.
+#
+# hosts: localhost is intentional, not a shortcut: Ansible skips an entire
+# play — including any guard task in it — without failing when its `hosts:`
+# pattern matches zero inventory hosts. Targeting localhost keeps this play,
+# and its "no matching instances" guard, always executing; real dynamic-
+# inventory group membership is read explicitly below via `groups`, not via
+# `hosts:`.
 - name: Start AWS dev cluster instances
-  hosts: "{{ target_group | default('role_worker:&env_dev') }}"
+  hosts: localhost
   connection: local
   gather_facts: false
+  vars_files:
+    - vars/dev.yml
   vars:
-    aws_region: us-west-2
+    include_control_plane: false
+    target_hosts: >-
+      {{
+        groups.get('env_dev', [])
+        if include_control_plane
+        else groups.get('role_worker', []) | intersect(groups.get('env_dev', []))
+      }}
   tasks:
-    - name: Fail if no matching dev instances were found  # noqa: run-once[task]
+    - name: Fail if no matching dev instances were found
       ansible.builtin.assert:
-        that: ansible_play_hosts_all | length > 0
+        that: target_hosts | length > 0
         fail_msg: >-
-          No instances matched the target group. Confirm AWS dev EC2
-          instances exist and are tagged environment=dev (see
+          No instances matched the target group (env_dev, role_worker unless
+          include_control_plane=true). Confirm AWS dev EC2 instances exist and
+          are tagged environment=dev, KubernetesRole=worker (see
           infra/terraform/modules/aws_compute_nodes).
-      run_once: true  # intentional: one aggregate API call, not per-host; strategy stays linear
 
-    - name: Start tagged AWS dev instances  # noqa: run-once[task]
+    - name: Start tagged AWS dev instances
       amazon.aws.ec2_instance:
         state: started
         region: "{{ aws_region }}"
-        instance_ids: "{{ ansible_play_hosts_all | map('extract', hostvars, 'instance_id') | list }}"
-      run_once: true  # intentional: one aggregate API call, not per-host; strategy stays linear
+        instance_ids: "{{ target_hosts | map('extract', hostvars, 'instance_id') | list }}"

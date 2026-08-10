@@ -1,0 +1,5 @@
+---
+# Shared vars for the AWS dev start/stop playbooks. Single source of truth
+# for aws_region so it isn't hardcoded independently in each playbook.
+# Matches infra/terraform/envs/dev/terraform.tfvars.example aws_cluster.region.
+aws_region: us-west-2
