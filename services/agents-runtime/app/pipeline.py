@@ -8,12 +8,15 @@ with real HTTP fetch, deterministic enrichment stub, explicit
 consumable by the existing article detail API.
 
 Environment variables (AGENTS_RUNTIME_* convention):
-  AGENTS_RUNTIME_DATABASE_URL   — DB URL; falls back to DATABASE_URL
   AGENTS_RUNTIME_GEEKNEWS_FEED_URL — Atom feed URL; defaults to
                                       https://news.hada.io/rss/news
+
+Database connectivity is the caller's responsibility (a Session is passed
+in); this module does not read a database URL from the environment itself.
 """
 from __future__ import annotations
 
+import logging
 import os
 import urllib.error
 import urllib.request
@@ -23,7 +26,8 @@ from datetime import datetime
 from email.utils import parsedate_to_datetime
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, selectinload
 
 from app.enrichment import generate_summary, translate_text
 from app.models import (
@@ -36,6 +40,15 @@ from app.models import (
     now_utc,
 )
 
+LOGGER = logging.getLogger(__name__)
+
+# DB column length limits (must match app/models.py String(...) definitions).
+# Enforced here so a malformed/adversarial feed entry is rejected at the
+# parse boundary instead of failing later with an opaque DB-level error.
+_MAX_TITLE_LENGTH = 500
+_MAX_CANONICAL_URL_LENGTH = 2048
+_MAX_EXTERNAL_ID_LENGTH = 255
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -44,15 +57,7 @@ GEEKNEWS_SLUG = "geeknews"
 GEEKNEWS_DISPLAY_NAME = "GeekNews"
 GEEKNEWS_BASE_URL = "https://news.hada.io"
 GEEKNEWS_DEFAULT_LANGUAGE = "ko"
-
-AGENTS_RUNTIME_DATABASE_URL: str = os.environ.get(
-    "AGENTS_RUNTIME_DATABASE_URL",
-    os.environ.get("DATABASE_URL", ""),
-)
-AGENTS_RUNTIME_GEEKNEWS_FEED_URL: str = os.environ.get(
-    "AGENTS_RUNTIME_GEEKNEWS_FEED_URL",
-    "https://news.hada.io/rss/news",
-)
+GEEKNEWS_DEFAULT_FEED_URL = "https://news.hada.io/rss/news"
 
 # Atom namespace
 _ATOM_NS = "http://www.w3.org/2005/Atom"
@@ -109,6 +114,11 @@ def fetch_feed(feed_url: str) -> list[FeedEntry]:
         title_el = entry_el.find(f"{{{_ATOM_NS}}}title")
         title = (title_el.text or "").strip() if title_el is not None else ""
 
+        # <id> is looked up once and reused for both the canonical_url
+        # fallback and external_id, instead of being searched twice.
+        id_el = entry_el.find(f"{{{_ATOM_NS}}}id")
+        id_text = (id_el.text or "").strip() if id_el is not None else ""
+
         # canonical_url: prefer <link rel="alternate">, fall back to <id>
         canonical_url = ""
         for link_el in entry_el.findall(f"{{{_ATOM_NS}}}link"):
@@ -117,24 +127,24 @@ def fetch_feed(feed_url: str) -> list[FeedEntry]:
                 canonical_url = link_el.get("href", "").strip()
                 break
         if not canonical_url:
-            id_el = entry_el.find(f"{{{_ATOM_NS}}}id")
-            canonical_url = (id_el.text or "").strip() if id_el is not None else ""
+            canonical_url = id_text
 
-        # external_id from <id> element
-        id_el = entry_el.find(f"{{{_ATOM_NS}}}id")
-        external_id: str | None = (id_el.text or "").strip() if id_el is not None else None
+        external_id: str | None = id_text or None
 
         # published_at
         published_at: datetime | None = None
         published_el = entry_el.find(f"{{{_ATOM_NS}}}published")
         if published_el is not None and published_el.text:
+            # Atom's <published> is spec'd as ISO-8601/RFC-3339, so try that
+            # first; RFC-822 (email-style) is only a defensive fallback for
+            # non-conformant feeds, not the expected format.
             try:
-                published_at = parsedate_to_datetime(published_el.text)
+                published_at = datetime.fromisoformat(
+                    published_el.text.replace("Z", "+00:00")
+                )
             except (TypeError, ValueError):
                 try:
-                    published_at = datetime.fromisoformat(
-                        published_el.text.replace("Z", "+00:00")
-                    )
+                    published_at = parsedate_to_datetime(published_el.text)
                 except (TypeError, ValueError):
                     published_at = None
 
@@ -148,6 +158,31 @@ def fetch_feed(feed_url: str) -> list[FeedEntry]:
             content = summary_el.text.strip()
 
         if not title or not canonical_url:
+            continue
+
+        # Boundary validation: reject entries that would only fail later at
+        # DB-insert time with an opaque driver error. Never trust external
+        # feed data to already respect our column limits.
+        if len(title) > _MAX_TITLE_LENGTH:
+            LOGGER.warning(
+                "skipping feed entry: title exceeds %s chars (got %s)",
+                _MAX_TITLE_LENGTH,
+                len(title),
+            )
+            continue
+        if len(canonical_url) > _MAX_CANONICAL_URL_LENGTH:
+            LOGGER.warning(
+                "skipping feed entry: canonical_url exceeds %s chars (got %s)",
+                _MAX_CANONICAL_URL_LENGTH,
+                len(canonical_url),
+            )
+            continue
+        if external_id and len(external_id) > _MAX_EXTERNAL_ID_LENGTH:
+            LOGGER.warning(
+                "skipping feed entry: external_id exceeds %s chars (got %s)",
+                _MAX_EXTERNAL_ID_LENGTH,
+                len(external_id),
+            )
             continue
 
         entries.append(
@@ -168,16 +203,31 @@ def fetch_feed(feed_url: str) -> list[FeedEntry]:
 # ---------------------------------------------------------------------------
 
 
-def _detach_with_loaded_attributes(session: Session, article: Article) -> Article:
-    """Refresh *article* from the DB, then detach it from *session*.
+def _detach_with_loaded_attributes(session: Session, article_id: str) -> Article:
+    """Reload the article at *article_id* with its relationships eagerly
+    loaded, then detach the whole object graph from *session*.
 
     Callers (tests, worker code) may access the returned object's scalar
-    attributes after the caller's ``with Session(...)`` block has already
-    closed the session. Without this, SQLAlchemy's default
-    ``expire_on_commit`` behavior leaves attributes expired post-commit,
-    and any access after the session closes raises DetachedInstanceError.
+    *and relationship* attributes (``segments``, ``structured_output``)
+    after the caller's ``with Session(...)`` block has already closed the
+    session. A bare ``session.refresh(article)`` only reloads scalar column
+    attributes, not relationships — accessing ``article.segments`` after
+    the session closes would still raise DetachedInstanceError. Re-querying
+    with explicit eager-load options (mirroring
+    ``services/api/app/domain/articles/service.get_article``) makes both
+    load. Expunging just the parent is enough — Article.segments and
+    Article.structured_output use cascade="all, delete-orphan", and "all"
+    already includes the expunge cascade, so expunging the children again
+    afterward would raise (they're no longer in the session by then).
     """
-    session.refresh(article)
+    article = session.scalars(
+        select(Article)
+        .options(
+            selectinload(Article.segments),
+            selectinload(Article.structured_output),
+        )
+        .where(Article.id == article_id)
+    ).one()
     session.expunge(article)
     return article
 
@@ -189,6 +239,13 @@ def upsert_source_registry(session: Session) -> SourceRegistryEntry:
     subsequent per-article intake/enrichment transaction.  Calling this
     function a second time with the same session returns the existing row
     without inserting a duplicate.
+
+    Concurrency: the existence check and the insert are not atomic, so two
+    overlapping calls (different sessions/processes) can both see no
+    existing row and both attempt to insert. If our insert loses that race,
+    the UniqueConstraint on ``slug`` raises IntegrityError on commit; we
+    roll back and return the row the other call already committed instead
+    of propagating the crash.
 
     Args:
         session: An open SQLAlchemy Session.  The function commits within
@@ -212,7 +269,16 @@ def upsert_source_registry(session: Session) -> SourceRegistryEntry:
         default_language=GEEKNEWS_DEFAULT_LANGUAGE,
     )
     session.add(entry)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        winner = session.scalars(
+            select(SourceRegistryEntry).where(SourceRegistryEntry.slug == GEEKNEWS_SLUG)
+        ).first()
+        if winner is None:
+            raise
+        return winner
     return entry
 
 
@@ -243,9 +309,13 @@ def run_pipeline(
 
         If all feed entries are already published: returns None (no-op skip).
 
-    Status transitions (code-level only, not separately persisted):
-        PENDING_INTAKE → PENDING_ENRICHMENT → PUBLISHED   (success path)
-        PENDING_INTAKE → FAILED                            (fetch-failure path)
+        Concurrency: if another overlapping run wins the race to insert the
+        same canonical_url first, our commit's UniqueConstraint violation is
+        caught and we return the winner's row instead of raising.
+
+    Persisted status is always a single terminal value — PUBLISHED on
+    success, FAILED on fetch failure — written once at construction time.
+    No intermediate status is ever committed for a row.
 
     Args:
         session: An open SQLAlchemy Session.
@@ -256,7 +326,9 @@ def run_pipeline(
         The persisted Article (status PUBLISHED or FAILED), or None if all
         entries were already processed.
     """
-    resolved_feed_url = feed_url or AGENTS_RUNTIME_GEEKNEWS_FEED_URL
+    resolved_feed_url = feed_url or os.environ.get(
+        "AGENTS_RUNTIME_GEEKNEWS_FEED_URL", GEEKNEWS_DEFAULT_FEED_URL
+    )
 
     # Phase 1: Source registry upsert — committed independently.
     source = upsert_source_registry(session)
@@ -264,8 +336,9 @@ def run_pipeline(
     # Phase 2: Article intake/enrichment — single transaction.
     try:
         entries = fetch_feed(resolved_feed_url)
-    except Exception as exc:  # noqa: BLE001 — any fetch/parse failure must
+    except Exception as exc:
         # transition to FAILED per AC-6, not just network errors.
+        LOGGER.exception("GeekNews feed fetch/parse failed url=%s", resolved_feed_url)
         # Fetch failure: commit FAILED status in a single transaction.
         # Use a unique synthetic URL so the UniqueConstraint is never violated
         # across repeated failure runs.
@@ -275,33 +348,37 @@ def run_pipeline(
             canonical_url=failure_url,
             title="[피드 수집 실패]",
             ingested_at=now_utc(),
-            status=ArticleProcessingStatus.PENDING_INTAKE,  # code-level start
+            status=ArticleProcessingStatus.FAILED,
+            status_reason=str(exc),
         )
-        # Explicit transition sequence (code-level)
-        article.status = ArticleProcessingStatus.FAILED
-        article.status_reason = str(exc)
         session.add(article)
         session.commit()
-        return _detach_with_loaded_attributes(session, article)
+        return _detach_with_loaded_attributes(session, article.id)
 
-    # Find first not-yet-published entry (idempotency check).
-    target: FeedEntry | None = None
-    for entry in entries:
-        existing = session.scalars(
-            select(Article).where(
-                Article.source_id == source.id,
-                Article.canonical_url == entry.canonical_url,
-            )
-        ).first()
-        if existing is None:
-            target = entry
-            break
+    # Find first not-yet-published entry (idempotency check). One query
+    # fetches every already-processed canonical_url for this source up
+    # front, instead of one SELECT per feed entry (N+1).
+    already_processed = set(
+        session.scalars(
+            select(Article.canonical_url).where(Article.source_id == source.id)
+        ).all()
+    )
+    target: FeedEntry | None = next(
+        (entry for entry in entries if entry.canonical_url not in already_processed),
+        None,
+    )
 
     if target is None:
         # All entries already processed — skip.
         return None
 
-    # Build Article with in-memory status transitions.
+    # Enrich: translation is pass-through copy; summary is deterministic stub.
+    original_text = target.content if target.content else target.title
+    summary = generate_summary(target.title)
+
+    # Status is set once, directly to its terminal value — not mutated
+    # through intermediate in-memory states, since nothing ever reads or
+    # persists those intermediate values before the final commit below.
     article = Article(
         source_id=source.id,
         canonical_url=target.canonical_url,
@@ -309,15 +386,8 @@ def run_pipeline(
         title=target.title,
         ingested_at=now_utc(),
         published_at=target.published_at,
-        status=ArticleProcessingStatus.PENDING_INTAKE,  # code-level transition 1
+        status=ArticleProcessingStatus.PUBLISHED,
     )
-
-    # Transition 2: PENDING_ENRICHMENT
-    article.status = ArticleProcessingStatus.PENDING_ENRICHMENT
-
-    # Enrich: translation is pass-through copy; summary is deterministic stub.
-    original_text = target.content if target.content else target.title
-    summary = generate_summary(target.title)
 
     segment = ArticleSegment(
         article=article,
@@ -331,13 +401,23 @@ def run_pipeline(
         summary=summary,
     )
 
-    # Transition 3: PUBLISHED (terminal — durably persisted)
-    article.status = ArticleProcessingStatus.PUBLISHED
-
     # Single all-or-nothing commit.
     session.add(article)
     session.add(segment)
     session.add(structured_output)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        # Another overlapping run already inserted this canonical_url first.
+        session.rollback()
+        winner = session.scalars(
+            select(Article).where(
+                Article.source_id == source.id,
+                Article.canonical_url == target.canonical_url,
+            )
+        ).first()
+        if winner is None:
+            raise
+        return _detach_with_loaded_attributes(session, winner.id)
 
-    return _detach_with_loaded_attributes(session, article)
+    return _detach_with_loaded_attributes(session, article.id)
