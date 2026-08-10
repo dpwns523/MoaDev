@@ -355,12 +355,18 @@ def run_pipeline(
         session.commit()
         return _detach_with_loaded_attributes(session, article.id)
 
-    # Find first not-yet-published entry (idempotency check). One query
-    # fetches every already-processed canonical_url for this source up
-    # front, instead of one SELECT per feed entry (N+1).
+    # Find first not-yet-published entry (idempotency check). One query,
+    # scoped to just this batch's canonical_urls, replaces one SELECT per
+    # feed entry (N+1) — and, unlike fetching the source's entire history,
+    # its cost stays bounded by the feed page size instead of growing with
+    # every article this source has ever processed.
+    batch_urls = [entry.canonical_url for entry in entries]
     already_processed = set(
         session.scalars(
-            select(Article.canonical_url).where(Article.source_id == source.id)
+            select(Article.canonical_url).where(
+                Article.source_id == source.id,
+                Article.canonical_url.in_(batch_urls),
+            )
         ).all()
     )
     target: FeedEntry | None = next(

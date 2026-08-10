@@ -170,3 +170,40 @@ def test_run_pipeline_result_relationships_survive_session_close(
     assert article.segments[0].position == 0
     assert article.structured_output is not None
     assert article.structured_output.summary
+
+
+# ---------------------------------------------------------------------------
+# Idempotency check stays scoped to the current batch (not the source's
+# entire history — found on re-review as a follow-up to the N+1 fix above)
+# ---------------------------------------------------------------------------
+
+
+def test_idempotency_check_ignores_unrelated_history(
+    engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A large amount of unrelated already-published history for this source
+    must not prevent a genuinely new feed entry from being processed — the
+    idempotency check is scoped to the current feed batch's canonical_urls,
+    not a full per-source history scan."""
+    with Session(engine) as session:
+        source = upsert_source_registry(session)
+        for i in range(50):
+            session.add(
+                Article(
+                    source_id=source.id,
+                    canonical_url=f"https://news.hada.io/topic?id=hist-{i}",
+                    title=f"history {i}",
+                    ingested_at=now_utc(),
+                    status=ArticleProcessingStatus.PUBLISHED,
+                )
+            )
+        session.commit()
+
+    monkeypatch.setattr("app.pipeline.fetch_feed", lambda url: [_ENTRY])
+
+    with Session(engine) as session:
+        result = run_pipeline(session)
+
+    assert result is not None
+    assert result.canonical_url == _ENTRY.canonical_url
+    assert result.status == ArticleProcessingStatus.PUBLISHED

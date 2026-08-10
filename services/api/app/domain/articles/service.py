@@ -32,7 +32,13 @@ class ArticleLookupError(LookupError):
 def list_category_summaries(session: Session) -> list[CategorySummary]:
     query = (
         select(Article.category_slug, func.count(Article.id))
-        .where(Article.category_slug.is_not(None))
+        .where(
+            Article.category_slug.is_not(None),
+            # Keep counts consistent with list_articles, which also hides
+            # FAILED rows — otherwise a category count could include
+            # articles a user can never actually browse into.
+            Article.status != ArticleProcessingStatus.FAILED,
+        )
         .group_by(Article.category_slug)
         .order_by(Article.category_slug.asc())
     )
