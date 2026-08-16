@@ -7,7 +7,9 @@ name = "moadev-agents-runtime"
 version = "0.1.0"
 description = "Product-facing agent orchestration helpers for MoaDev."
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+  "sqlalchemy>=2.0.36,<3"
+]
 
 [project.optional-dependencies]
 dev = [

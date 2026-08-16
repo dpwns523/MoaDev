@@ -6,7 +6,7 @@ from typing import Optional
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.domain.articles.models import Article, SourceRegistryEntry
+from app.domain.articles.models import Article, ArticleProcessingStatus, SourceRegistryEntry
 
 
 ACRONYM_WORDS = {
@@ -32,7 +32,13 @@ class ArticleLookupError(LookupError):
 def list_category_summaries(session: Session) -> list[CategorySummary]:
     query = (
         select(Article.category_slug, func.count(Article.id))
-        .where(Article.category_slug.is_not(None))
+        .where(
+            Article.category_slug.is_not(None),
+            # Keep counts consistent with list_articles, which also hides
+            # FAILED rows — otherwise a category count could include
+            # articles a user can never actually browse into.
+            Article.status != ArticleProcessingStatus.FAILED,
+        )
         .group_by(Article.category_slug)
         .order_by(Article.category_slug.asc())
     )
@@ -57,6 +63,13 @@ def list_articles(
     query = (
         select(Article)
         .options(joinedload(Article.source))
+        # Fetch-failure rows are persisted with a synthetic placeholder
+        # canonical_url and title (see agents-runtime's run_pipeline) so the
+        # unique constraint holds across repeated failures — they carry no
+        # real content and must never surface in this listing. Other
+        # in-progress statuses (e.g. pending_enrichment) are intentionally
+        # still shown so a client can render a "processing" state.
+        .where(Article.status != ArticleProcessingStatus.FAILED)
         .order_by(
             Article.published_at.is_(None).asc(),
             Article.published_at.desc(),
