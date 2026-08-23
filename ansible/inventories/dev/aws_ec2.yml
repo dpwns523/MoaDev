@@ -1,0 +1,26 @@
+---
+# Dynamic AWS EC2 inventory for the "dev" environment.
+#
+# Requires the amazon.aws collection (aws_ec2 inventory plugin). Selects
+# instances by the exact tags applied in infra/terraform/modules/aws_compute_nodes
+# (KubernetesRole) and the shared_labels module (environment). Region below
+# matches infra/terraform/envs/dev/terraform.tfvars.example aws_cluster.region.
+#
+# NOTE: this `regions:` list is static inventory-plugin config, not a
+# templated playbook var — passing -e aws_region=... does NOT change which
+# region this file queries. If the real deployment uses a different region,
+# edit the list below (it is independent of the aws_region var consumed by
+# ansible/playbooks/vars/dev.yml and the start/stop playbooks' ec2_instance
+# calls; keep both in sync manually).
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-west-2
+filters:
+  tag:environment: dev
+keyed_groups:
+  - key: tags.KubernetesRole
+    prefix: role
+  - key: tags.environment
+    prefix: env
+compose:
+  ansible_host: public_ip_address | default(private_ip_address)
