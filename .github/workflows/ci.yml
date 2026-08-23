@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify (lint, typecheck, test, tf-validate)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Every `make` target in this repo skips gracefully (instead of
+      # failing) when a workspace hasn't been bootstrapped yet — so
+      # `make bootstrap` must run before `make verify`, or CI would
+      # silently "pass" without actually linting/testing anything.
+      - name: Bootstrap workspaces
+        run: make bootstrap
+
+      # `make verify` = lint (web/api/agents-runtime + `terraform fmt -check`)
+      # + typecheck + test (web/api/agents-runtime) + tf-validate. This also
+      # covers what a standalone infra-validate workflow would otherwise
+      # duplicate, so no separate infra-validate.yml is added.
+      - name: Verify
+        run: make verify
