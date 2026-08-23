@@ -1,4 +1,4 @@
-from typing import Union
+from __future__ import annotations
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -7,7 +7,6 @@ from pydantic import ValidationError
 from app.schemas.common import ErrorResponse
 from app.schemas.feed import FeedItem, FeedResponse
 from app.services.feed_catalog import list_curated_feeds
-
 
 router = APIRouter(prefix="/feeds", tags=["feeds"])
 
@@ -27,7 +26,7 @@ def build_feed_response() -> FeedResponse:
         503: {"model": ErrorResponse},
     },
 )
-def read_feeds() -> Union[FeedResponse, JSONResponse]:
+def read_feeds() -> FeedResponse | JSONResponse:
     try:
         return build_feed_response()
     except (ValidationError, ValueError):

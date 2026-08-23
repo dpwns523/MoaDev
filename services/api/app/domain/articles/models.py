@@ -5,8 +5,18 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum as SqlEnum, ForeignKey, Integer, MetaData
-from sqlalchemy import String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    MetaData,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, validates
 
 
@@ -67,7 +77,13 @@ class SourceRegistryEntry(Base):
         nullable=False,
         default=SourceRetentionMode.NORMALIZED_SEGMENTS,
     )
-    content_retention_days: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    # SQLAlchemy's declarative mapper resolves Mapped[...] annotations at
+    # runtime (even under `from __future__ import annotations`), so PEP 604
+    # `X | None` syntax here would break on Python 3.9 (requires-python
+    # >=3.9); Optional[...] is required for these columns specifically.
+    content_retention_days: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True
+    )
     policy_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -80,7 +96,7 @@ class SourceRegistryEntry(Base):
         onupdate=now_utc,
     )
 
-    articles: Mapped[list["Article"]] = relationship(
+    articles: Mapped[list[Article]] = relationship(
         back_populates="source",
         cascade="all, delete-orphan",
     )
@@ -112,7 +128,9 @@ class Article(Base):
     canonical_url: Mapped[str] = mapped_column(String(2048), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     excerpt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     category_slug: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
@@ -134,12 +152,12 @@ class Article(Base):
     )
 
     source: Mapped[SourceRegistryEntry] = relationship(back_populates="articles")
-    segments: Mapped[list["ArticleSegment"]] = relationship(
+    segments: Mapped[list[ArticleSegment]] = relationship(
         back_populates="article",
         cascade="all, delete-orphan",
         order_by="ArticleSegment.position",
     )
-    structured_output: Mapped[Optional["ArticleStructuredOutput"]] = relationship(
+    structured_output: Mapped[Optional[ArticleStructuredOutput]] = relationship(
         back_populates="article",
         cascade="all, delete-orphan",
         uselist=False,
@@ -156,7 +174,7 @@ class Article(Base):
     @validates("tags")
     def validate_tags(self, key: str, value: list[Any]) -> list[str]:
         if not isinstance(value, list):
-            raise ValueError(f"{key} must be a list of strings.")
+            raise TypeError(f"{key} must be a list of strings.")
 
         normalized_tags: list[str] = []
         for item in value:
@@ -237,12 +255,12 @@ class ArticleStructuredOutput(Base):
     @validates("glossary_entries", "concept_explanations", "related_concepts")
     def validate_object_lists(self, key: str, value: list[Any]) -> list[dict[str, str]]:
         if not isinstance(value, list):
-            raise ValueError(f"{key} must be a list.")
+            raise TypeError(f"{key} must be a list.")
 
         normalized_items: list[dict[str, str]] = []
         for item in value:
             if not isinstance(item, dict):
-                raise ValueError(f"{key} must contain only object entries.")
+                raise TypeError(f"{key} must contain only object entries.")
             normalized_items.append(
                 {str(dict_key): str(dict_value) for dict_key, dict_value in item.items()}
             )
@@ -252,7 +270,7 @@ class ArticleStructuredOutput(Base):
     @validates("quality_notes")
     def validate_quality_notes(self, key: str, value: list[Any]) -> list[str]:
         if not isinstance(value, list):
-            raise ValueError(f"{key} must be a list of strings.")
+            raise TypeError(f"{key} must be a list of strings.")
 
         normalized_notes: list[str] = []
         for item in value:
@@ -263,7 +281,7 @@ class ArticleStructuredOutput(Base):
 
 def normalize_required_string(key: str, value: Any) -> str:
     if not isinstance(value, str):
-        raise ValueError(f"{key} must be a string.")
+        raise TypeError(f"{key} must be a string.")
 
     normalized_value = value.strip()
     if not normalized_value:

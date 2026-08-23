@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -27,7 +29,6 @@ from app.schemas.article import (
     StructuredOutputItem,
 )
 from app.schemas.common import ErrorResponse
-
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 

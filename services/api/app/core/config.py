@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import os
 from dataclasses import dataclass
 from typing import Optional
-
 
 DEFAULT_INTERNAL_AUTH_MAX_AGE_SECONDS = 300
 

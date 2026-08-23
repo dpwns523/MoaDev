@@ -1,0 +1,91 @@
+name: Deploy (OCI)
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: >-
+          Image tag to deploy (defaults to the SHA of the dispatched ref).
+          Set explicitly to redeploy a previously built image without
+          re-running Build Images.
+        required: false
+        type: string
+
+concurrency:
+  group: deploy-oci
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    name: Deploy to OCI cluster
+    runs-on: ${{ vars.OCI_DEPLOY_RUNNER_LABEL || 'self-hosted' }}
+    environment: oci
+    timeout-minutes: 20
+    env:
+      REGISTRY: ghcr.io
+      K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE || 'moadev' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            echo "value=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Kubeconfig content must never be hardcoded or logged. It is
+      # decoded from a base64 environment-scoped secret into a
+      # short-lived temp file for this job only, and removed in the
+      # cleanup step below regardless of outcome.
+      - name: Configure kubeconfig
+        run: |
+          KUBECONFIG_PATH="$(mktemp)"
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 --decode > "$KUBECONFIG_PATH"
+          chmod 600 "$KUBECONFIG_PATH"
+          echo "KUBECONFIG=$KUBECONFIG_PATH" >> "$GITHUB_ENV"
+
+      # Idempotent upsert so repeat deploys don't fail on "already exists".
+      - name: Ensure GHCR pull secret
+        run: |
+          kubectl create secret docker-registry ghcr-pull-secret \
+            --docker-server="${{ env.REGISTRY }}" \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}" \
+            --namespace "${{ env.K8S_NAMESPACE }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Helm lint
+        run: |
+          helm lint platform/helm/moadev -f platform/helm/moadev/values-oci.yaml
+
+      # global.imageRegistry is intentionally not overridden here — the
+      # chart's own default (platform/helm/moadev/values.yaml) already
+      # points at ghcr.io/dpwns523/moadev, keeping the registry a single
+      # source of truth instead of duplicating it in this workflow.
+      - name: Helm upgrade
+        run: |
+          helm upgrade --install moadev platform/helm/moadev \
+            -f platform/helm/moadev/values-oci.yaml \
+            --namespace "${{ env.K8S_NAMESPACE }}" \
+            --create-namespace \
+            --set global.imageTag="${{ steps.tag.outputs.value }}" \
+            --set 'global.imagePullSecrets[0].name=ghcr-pull-secret' \
+            --atomic --wait --timeout 5m
+
+      - name: Clean up kubeconfig
+        if: always()
+        run: rm -f "$KUBECONFIG"

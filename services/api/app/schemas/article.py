@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+# Pydantic v2 resolves `from __future__ import annotations`-deferred type
+# hints at runtime; on Python 3.9 (requires-python >=3.9) evaluating PEP 604
+# `X | None` syntax raises TypeError unless the `eval_type_backport` package
+# is installed, which this project doesn't depend on. Optional[...] is kept
+# throughout this file for that reason.
 from typing import Optional
 
 from pydantic import BaseModel, Field

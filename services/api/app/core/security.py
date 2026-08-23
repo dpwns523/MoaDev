@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import base64
 import hashlib
 import hmac
 import json
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class InvalidAuthTokenError(Exception):
@@ -24,7 +26,7 @@ class AuthTokenClaims:
     issued_at: int
 
 
-def create_internal_auth_token(payload: Dict[str, Any], secret: str) -> str:
+def create_internal_auth_token(payload: dict[str, Any], secret: str) -> str:
     encoded_payload = encode_base64url(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
     signature = build_token_signature(encoded_payload, secret)
     return f"{encoded_payload}.{signature}"
@@ -70,7 +72,7 @@ def split_token(token: str) -> tuple[str, str]:
     return parts[0], parts[1]
 
 
-def decode_token_payload(encoded_payload: str) -> Dict[str, Any]:
+def decode_token_payload(encoded_payload: str) -> dict[str, Any]:
     try:
         payload = json.loads(decode_base64url(encoded_payload).decode("utf-8"))
     except (ValueError, json.JSONDecodeError):
@@ -82,7 +84,7 @@ def decode_token_payload(encoded_payload: str) -> Dict[str, Any]:
     return payload
 
 
-def read_optional_string(payload: Dict[str, Any], key: str) -> Optional[str]:
+def read_optional_string(payload: dict[str, Any], key: str) -> Optional[str]:
     value = payload.get(key)
     if not isinstance(value, str):
         return None

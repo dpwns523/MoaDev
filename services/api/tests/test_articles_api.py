@@ -17,7 +17,6 @@ from app.domain.articles.models import (
 from app.main import app
 from tests.auth_token_helpers import TEST_INTERNAL_AUTH_SECRET, build_auth_headers
 
-
 client = TestClient(app)
 
 

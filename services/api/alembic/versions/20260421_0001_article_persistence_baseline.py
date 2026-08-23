@@ -1,8 +1,8 @@
 """create article persistence baseline"""
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 revision = "20260421_0001"
 down_revision = None

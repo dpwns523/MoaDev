@@ -20,7 +20,7 @@ dev = [
   "httpx>=0.27,<1",
   "mypy>=1.10,<2",
   "pytest>=8,<9",
-  "ruff>=0.4,<1"
+  "ruff==0.16.4"
 ]
 
 [tool.setuptools.packages.find]
@@ -32,6 +32,20 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py39"
+
+[tool.ruff.lint]
+# UP045 (Optional[X] -> X | None) is disabled repo-wide for this service:
+# FastAPI route/dependency signatures, Pydantic BaseModel fields, and
+# SQLAlchemy Mapped[...] columns are all resolved at runtime via
+# typing.get_type_hints()-style machinery, which raises TypeError for PEP 604
+# `X | None` syntax on Python 3.9 (requires-python >=3.9) unless the
+# eval_type_backport package is installed (not a dependency here).
+#
+# B008 (function call in default argument) is disabled repo-wide: it flags
+# FastAPI's required `Depends(...)` dependency-injection idiom as a bug,
+# which is a well-known false positive for this framework, not an actual
+# mutable-default-argument hazard.
+ignore = ["UP045", "B008"]
 
 [tool.mypy]
 python_version = "3.9"

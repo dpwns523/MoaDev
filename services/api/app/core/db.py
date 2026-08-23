@@ -1,5 +1,4 @@
-from functools import lru_cache
-from typing import Dict
+from functools import cache
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -15,7 +14,7 @@ def get_required_database_url(settings: Settings) -> str:
     return settings.database_url
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_engine(database_url: str) -> Engine:
     return create_engine(
         database_url,
@@ -29,7 +28,7 @@ def get_session_factory(database_url: str) -> sessionmaker[Session]:
     return sessionmaker(bind=get_engine(database_url), autoflush=False, expire_on_commit=False)
 
 
-def build_connect_args(database_url: str) -> Dict[str, object]:
+def build_connect_args(database_url: str) -> dict[str, object]:
     if database_url.startswith("sqlite"):
         return {"check_same_thread": False}
 
