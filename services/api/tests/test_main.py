@@ -3,10 +3,8 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 import app.api.v1.endpoints.feeds as feeds_route_module
-
 from app.main import app
 from tests.auth_token_helpers import TEST_INTERNAL_AUTH_SECRET, build_auth_headers
-
 
 client = TestClient(app)
 

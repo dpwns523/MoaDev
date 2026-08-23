@@ -6,7 +6,6 @@ from app.domain.articles.service import list_category_summaries
 from app.schemas.article import CategoryListItem, CategoryListResponse
 from app.schemas.common import ErrorResponse
 
-
 router = APIRouter(prefix="/categories", tags=["categories"])
 
 

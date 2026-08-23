@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from app.core.security import create_internal_auth_token
-
 
 TEST_INTERNAL_AUTH_SECRET = "test-internal-auth-secret"
 
@@ -28,7 +29,7 @@ def build_auth_token(
     )
 
 
-def build_auth_headers(**kwargs: Any) -> Dict[str, str]:
+def build_auth_headers(**kwargs: Any) -> dict[str, str]:
     return {
         "Authorization": f"Bearer {build_auth_token(**kwargs)}",
     }

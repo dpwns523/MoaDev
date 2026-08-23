@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -10,7 +12,6 @@ from app.core.security import (
     InvalidAuthTokenError,
     verify_internal_auth_token,
 )
-
 
 bearer_scheme = HTTPBearer(auto_error=False)
 

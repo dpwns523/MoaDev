@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.domain.articles.models import Article, ArticleProcessingStatus, SourceRegistryEntry
 
-
 ACRONYM_WORDS = {
     "ai": "AI",
     "api": "API",

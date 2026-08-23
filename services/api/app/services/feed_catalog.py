@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-
 ALLOWED_FEED_KINDS = {"news", "pull-request"}
 
 
