@@ -27,10 +27,17 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
+      # Both Python services declare `requires-python = ">=3.9"` and pin
+      # mypy's `python_version = "3.9"` — this is the project's actual
+      # verified floor (matching every contributor's local dev venv), not
+      # the 3.12 the Docker runtime images use. Installing at 3.12 here
+      # would let pip resolve newer transitive dependency releases (e.g.
+      # anyio) that use 3.10+ syntax internally, which mypy then fails to
+      # parse under its 3.9 target — a real failure hit once already.
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.9"
 
       # Every `make` target in this repo skips gracefully (instead of
       # failing) when a workspace hasn't been bootstrapped yet — so
